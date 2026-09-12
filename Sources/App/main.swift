@@ -21,10 +21,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .sink { [weak self] _ in
-                if SettingsManager.shared.showOverlay {
-                    self?.windowController.showHUD()
+                guard let self = self else { return }
+                if SettingsManager.shared.showOverlay && self.nowPlayingMonitor.currentTrack != nil {
+                    self.windowController.showHUD()
                 } else {
-                    self?.windowController.hideHUD()
+                    self.windowController.hideHUD()
                 }
             }
             .store(in: &cancellables)
@@ -36,11 +37,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Bind Monitor to SyncEngine
         nowPlayingMonitor.$currentTrack
             .sink { [weak self] track in
-                self?.syncEngine.currentTrack = track
+                guard let self = self else { return }
+                self.syncEngine.currentTrack = track
                 if let track = track {
-                    self?.fetchLyrics(for: track)
+                    self.fetchLyrics(for: track)
+                    if SettingsManager.shared.showOverlay {
+                        self.windowController.showHUD()
+                    }
                 } else {
-                    self?.syncEngine.currentLyrics = nil
+                    self.syncEngine.currentLyrics = nil
+                    self.windowController.hideHUD()
                 }
             }
             .store(in: &cancellables)

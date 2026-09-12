@@ -31,7 +31,7 @@ class HUDPanel: NSPanel {
 @MainActor
 class FloatingHUDWindowController: NSWindowController {
     
-    convenience init<V: View>(rootView: V) {
+    init<V: View>(rootView: V) {
         let panel = HUDPanel(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 200),
             styleMask: [.nonactivatingPanel, .borderless, .resizable],
@@ -51,7 +51,11 @@ class FloatingHUDWindowController: NSWindowController {
         let hostingView = NSHostingView(rootView: rootView)
         panel.contentView = hostingView
         
-        self.init(window: panel)
+        super.init(window: panel)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     func showHUD() {
