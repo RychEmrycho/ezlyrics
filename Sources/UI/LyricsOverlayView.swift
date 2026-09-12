@@ -142,7 +142,7 @@ struct LyricsOverlayView: View {
             Group {
                 if settings.showBackground {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.black.opacity(settings.backgroundOpacity))
+                        .fill(Color(hex: settings.backgroundColorHex).opacity(settings.backgroundOpacity))
                 }
             }
         )

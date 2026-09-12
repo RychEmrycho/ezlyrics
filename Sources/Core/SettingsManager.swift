@@ -8,6 +8,7 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
     @AppStorage("textColorHex") var textColorHex: String = "#FFFFFF"
     @AppStorage("showOverlay") var showOverlay: Bool = true
     @AppStorage("showBackground") var showBackground: Bool = true
+    @AppStorage("backgroundColorHex") var backgroundColorHex: String = "#000000"
     @AppStorage("backgroundOpacity") var backgroundOpacity: Double = 0.5
     @AppStorage("enableTranslation") var enableTranslation: Bool = false
     @AppStorage("enableRomanization") var enableRomanization: Bool = false
