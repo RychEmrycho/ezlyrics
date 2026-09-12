@@ -42,7 +42,7 @@ struct SettingsView: View {
                 }
                 
                 Section(header: Text("Translation")) {
-                    Toggle("Romanization (JA / KO / ZH)", isOn: $settings.enableRomanization)
+                    Toggle("Romanize Non-Latin Text", isOn: $settings.enableRomanization)
                     Toggle("Enable Translation", isOn: $settings.enableTranslation)
                     
                     if settings.enableTranslation {
