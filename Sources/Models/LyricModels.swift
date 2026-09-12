@@ -18,4 +18,5 @@ struct ParsedLyrics: Equatable, Codable {
     let artistName: String
     let isSynced: Bool
     let lines: [LyricLine]
+    var detectedLanguage: String? = nil
 }

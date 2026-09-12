@@ -63,4 +63,8 @@ class FloatingHUDWindowController: NSWindowController {
         }
         window?.orderFront(nil)
     }
+    
+    func hideHUD() {
+        window?.orderOut(nil)
+    }
 }

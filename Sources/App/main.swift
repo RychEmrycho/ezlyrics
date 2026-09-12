@@ -15,7 +15,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup Window
         let lyricsView = LyricsOverlayView(syncEngine: syncEngine)
         windowController = FloatingHUDWindowController(rootView: lyricsView)
-        windowController.showHUD()
+        if SettingsManager.shared.showOverlay {
+            windowController.showHUD()
+        }
+        
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .sink { [weak self] _ in
+                if SettingsManager.shared.showOverlay {
+                    self?.windowController.showHUD()
+                } else {
+                    self?.windowController.hideHUD()
+                }
+            }
+            .store(in: &cancellables)
         
         // Setup Menu Bar
         menuBarController = MenuBarController()
@@ -50,9 +62,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
                 self.syncEngine.currentLyrics = parsed
             } catch {
-                print("Failed to fetch lyrics: \(error)")
-                // Optionally clear or set an error state on syncEngine
-                // self.syncEngine.currentLyrics = nil
+                do {
+                    let results = try await LRCLIBClient.shared.searchLyrics(query: track.title)
+                    if let bestMatch = results.first(where: { $0.syncedLyrics != nil || $0.plainLyrics != nil }) {
+                        let parsed = LRCParser.parse(plain: bestMatch.plainLyrics, synced: bestMatch.syncedLyrics, trackName: bestMatch.trackName, artistName: bestMatch.artistName)
+                        LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
+                        self.syncEngine.currentLyrics = parsed
+                    } else {
+                        print("Failed to fetch lyrics: No lyrics found in search results.")
+                    }
+                } catch {
+                    print("Failed to fetch lyrics via search: \(error)")
+                }
             }
         }
     }

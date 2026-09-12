@@ -16,7 +16,7 @@ class MenuBarController: NSObject {
         }
         
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 400, height: 500)
+        popover.contentSize = NSSize(width: 400, height: 650)
         popover.behavior = .transient
         
         let view = ManualOverrideView(syncEngine: syncEngine)

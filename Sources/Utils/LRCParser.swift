@@ -1,19 +1,31 @@
 import Foundation
+import NaturalLanguage
 
 class LRCParser {
     
     static func parse(plain: String?, synced: String?, trackName: String, artistName: String) -> ParsedLyrics {
+        var lines: [LyricLine] = []
+        var isSynced = false
+        
         if let synced = synced, !synced.isEmpty {
-            let lines = parseSynced(lrc: synced)
-            return ParsedLyrics(trackName: trackName, artistName: artistName, isSynced: true, lines: lines)
+            lines = parseSynced(lrc: synced)
+            isSynced = true
         } else if let plain = plain, !plain.isEmpty {
-            let lines = plain.components(separatedBy: .newlines).map {
+            lines = plain.components(separatedBy: .newlines).map {
                 LyricLine(timestamp: 0, text: $0, syllables: nil)
             }
-            return ParsedLyrics(trackName: trackName, artistName: artistName, isSynced: false, lines: lines)
-        } else {
-            return ParsedLyrics(trackName: trackName, artistName: artistName, isSynced: false, lines: [])
+            isSynced = false
         }
+        
+        var detectedLanguage: String? = nil
+        let sampleText = lines.prefix(20).map { $0.text }.joined(separator: " ")
+        if !sampleText.isEmpty {
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(sampleText)
+            detectedLanguage = recognizer.dominantLanguage?.rawValue
+        }
+        
+        return ParsedLyrics(trackName: trackName, artistName: artistName, isSynced: isSynced, lines: lines, detectedLanguage: detectedLanguage)
     }
     
     private static func parseSynced(lrc: String) -> [LyricLine] {

@@ -41,14 +41,40 @@ struct SettingsView: View {
                     }
                 }
                 
-                Section(header: Text("Features")) {
-                    Toggle("Enable macOS Native Translation", isOn: $settings.enableTranslation)
+                Section(header: Text("Translation")) {
+                    Toggle("Romanization (JA / KO / ZH)", isOn: $settings.enableRomanization)
+                    Toggle("Enable Translation", isOn: $settings.enableTranslation)
+                    
+                    if settings.enableTranslation {
+                        Picker("From", selection: $settings.translationSource) {
+                            Text("Auto-detect").tag("auto")
+                            Divider()
+                            Text("Japanese").tag("ja")
+                            Text("Korean").tag("ko")
+                            Text("Spanish").tag("es")
+                            Text("French").tag("fr")
+                            Text("Mandarin Chinese").tag("zh")
+                            Text("Portuguese").tag("pt")
+                            Text("German").tag("de")
+                            Text("Italian").tag("it")
+                            Text("Russian").tag("ru")
+                        }
+                        
+                        Picker("To", selection: $settings.translationTarget) {
+                            Text("English").tag("en")
+                            Text("Japanese").tag("ja")
+                            Text("Korean").tag("ko")
+                            Text("Spanish").tag("es")
+                            Text("French").tag("fr")
+                            Text("Mandarin Chinese").tag("zh")
+                        }
+                    }
                 }
                 
             }
             .padding()
         }
-        .frame(width: 400, height: 350)
+        .frame(width: 400, height: 480)
     }
 }
 
