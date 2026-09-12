@@ -12,6 +12,7 @@ struct ManualOverrideView: View {
     @State private var translatedLines: [UUID: String] = [:]
     @State private var isAutoFollowing = true
     @State private var scrollMonitor: Any?
+    @State private var isShowingSearchResults = false
     
     @State private var offsetInput: String = "0"
     
@@ -29,9 +30,6 @@ struct ManualOverrideView: View {
                     .foregroundColor(.secondary)
             }
             
-            Toggle("Show Lyrics Overlay", isOn: $settings.showOverlay)
-                .padding(.top, 4)
-
             Divider()
             
             HStack {
@@ -51,28 +49,30 @@ struct ManualOverrideView: View {
                     .padding()
             }
             
-            ScrollView {
-                LazyVStack(alignment: .leading) {
-                    ForEach(searchResults, id: \.id) { result in
-                        Button(action: {
-                            applyOverride(result)
-                        }) {
-                            VStack(alignment: .leading) {
-                                Text("\(result.artistName) - \(result.trackName)")
-                                    .font(.body)
-                                Text("Duration: \(Int(result.duration ?? 0))s • \(result.syncedLyrics != nil ? "Synced" : "Plain")")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+            if !searchResults.isEmpty {
+                DisclosureGroup(isExpanded: $isShowingSearchResults) {
+                    ScrollView {
+                        LazyVStack(alignment: .leading) {
+                            ForEach(searchResults, id: \.id) { result in
+                                SearchResultRow(result: result) {
+                                    applyOverride(result)
+                                }
                             }
-                            .padding(.vertical, 2)
-                            .contentShape(Rectangle())
                         }
-                        .buttonStyle(.plain)
+                        .padding(.horizontal, 4)
                     }
+                    .frame(maxHeight: 200)
+                } label: {
+                    Text("Search Results")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation {
+                                isShowingSearchResults.toggle()
+                            }
+                        }
                 }
-                .padding(.horizontal, 4)
             }
-            .frame(maxHeight: 200)
             
             Divider()
             
@@ -222,14 +222,15 @@ struct ManualOverrideView: View {
                 Divider()
             }
             
-            Button("Settings") {
-                openSettings()
+            VStack(alignment: .leading, spacing: 2) {
+                MenuToggleRow(title: "Show Lyric", iconName: "text.quote", isOn: $settings.showOverlay)
+                MenuItemRow(title: "Setting", iconName: "gearshape") {
+                    openSettings()
+                }
+                MenuItemRow(title: "Quit", iconName: "power") {
+                    NSApplication.shared.terminate(nil)
+                }
             }
-            
-            Button("Quit ezlyrics") {
-                NSApplication.shared.terminate(nil)
-            }
-            .padding(.bottom, 8)
         }
         .padding()
         .onAppear {
@@ -305,6 +306,9 @@ struct ManualOverrideView: View {
             do {
                 let results = try await LRCLIBClient.shared.searchLyrics(query: searchQuery)
                 self.searchResults = results
+                if !results.isEmpty {
+                    self.isShowingSearchResults = true
+                }
             } catch {
                 print("Search failed: \(error)")
                 self.searchResults = []
@@ -348,3 +352,87 @@ struct ManualOverrideView: View {
     }
 }
 
+struct SearchResultRow: View {
+    let result: LRCLIBResponse
+    let action: () -> Void
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading) {
+                Text("\(result.artistName) - \(result.trackName)")
+                    .font(.body)
+                Text("Duration: \(Int(result.duration ?? 0))s • \(result.syncedLyrics != nil ? "Synced" : "Plain")")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 4)
+            .background(isHovered ? Color.secondary.opacity(0.2) : Color.clear)
+            .cornerRadius(4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+    }
+}
+
+struct MenuItemRow: View {
+    let title: String
+    let iconName: String
+    let action: () -> Void
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: iconName)
+                    .frame(width: 16, alignment: .center)
+                Text(title)
+            }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 8)
+                .background(isHovered ? Color.accentColor : Color.clear)
+                .foregroundColor(isHovered ? .white : .primary)
+                .cornerRadius(4)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+    }
+}
+
+struct MenuToggleRow: View {
+    let title: String
+    let iconName: String
+    @Binding var isOn: Bool
+    @State private var isHovered = false
+    
+    var body: some View {
+        HStack {
+            Image(systemName: iconName)
+                .frame(width: 16, alignment: .center)
+            Text(title)
+            Spacer()
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .scaleEffect(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(isHovered ? Color.accentColor : Color.clear)
+        .foregroundColor(isHovered ? .white : .primary)
+        .cornerRadius(4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isOn.toggle()
+        }
+        .onHover { isHovered = $0 }
+    }
+}
