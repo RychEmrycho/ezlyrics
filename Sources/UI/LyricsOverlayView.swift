@@ -38,28 +38,13 @@ struct LyricsOverlayView: View {
                 TimelineView(.animation) { _ in
                     let effectiveTime = syncEngine.currentEffectiveTime()
                     
-                    Text(active.text)
-                        .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))
-                        .foregroundColor(Color(hex: settings.textColorHex).opacity(0.3))
-                        .multilineTextAlignment(textAlignment)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.5)
-                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                        .overlay(
-                            Text(active.text)
-                                .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))
-                                .foregroundColor(Color(hex: settings.textColorHex))
-                                .multilineTextAlignment(textAlignment)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.5)
-                                .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                                .mask(alignment: .leading) {
-                                    GeometryReader { geo in
-                                        Rectangle()
-                                            .frame(width: geo.size.width * fillRatio(for: active, at: effectiveTime))
-                                    }
-                                }
-                        )
+                    KaraokeLyricLineView(
+                        active: active,
+                        effectiveTime: effectiveTime,
+                        settings: settings,
+                        fontDesign: fontDesign,
+                        textAlignment: textAlignment
+                    )
                 }
                 
                 if settings.enableTranslation, let translated = translatedText, !translated.isEmpty {
@@ -114,6 +99,40 @@ struct LyricsOverlayView: View {
         .applyTranslation(text: syncEngine.activeLine?.text ?? "", isEnabled: settings.enableTranslation, translatedText: $translatedText)
     }
     
+}
+
+struct KaraokeLyricLineView: View {
+    let active: LyricLine
+    let effectiveTime: TimeInterval
+    @ObservedObject var settings: SettingsManager
+    let fontDesign: Font.Design
+    let textAlignment: TextAlignment
+    
+    var body: some View {
+        Text(active.text)
+            .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))
+            .foregroundColor(Color(hex: settings.textColorHex).opacity(0.3))
+            .multilineTextAlignment(textAlignment)
+            .lineLimit(2)
+            .minimumScaleFactor(0.5)
+            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+            .overlay(
+                Text(active.text)
+                    .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))
+                    .foregroundColor(Color(hex: settings.textColorHex))
+                    .multilineTextAlignment(textAlignment)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.5)
+                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    .mask(alignment: .leading) {
+                        GeometryReader { geo in
+                            Rectangle()
+                                .frame(width: geo.size.width * fillRatio(for: active, at: effectiveTime))
+                        }
+                    }
+            )
+    }
+    
     private func fillRatio(for line: LyricLine, at time: TimeInterval) -> CGFloat {
         guard let syllables = line.syllables, !syllables.isEmpty else {
             return time >= line.timestamp ? 1.0 : 0.0
@@ -149,7 +168,7 @@ struct TranslationWrapper: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            .onChange(of: text) { newText in
+            .onChange(of: text) { _, newText in
                 guard isEnabled, !newText.isEmpty, newText != "•••", newText != "♫", newText != "Lyrics are not synced" else {
                     translatedText = nil
                     return
@@ -174,7 +193,7 @@ extension View {
         if #available(macOS 15.0, *) {
             self.modifier(TranslationWrapper(text: text, isEnabled: isEnabled, translatedText: translatedText))
         } else {
-            self.onChange(of: text) { _ in
+            self.onChange(of: text) { _, _ in
                 if isEnabled {
                     translatedText.wrappedValue = "(Requires macOS 15+)"
                 } else {

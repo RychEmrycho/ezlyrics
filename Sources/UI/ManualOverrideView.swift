@@ -89,7 +89,7 @@ struct ManualOverrideView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 80)
-                .onChange(of: offsetUnit) { _ in
+                .onChange(of: offsetUnit) { _, _ in
                     applyOffset()
                 }
                 
@@ -150,7 +150,7 @@ struct ManualOverrideView: View {
                 }
             }
         }
-        .onChange(of: syncEngine.currentTrack) { newTrack in
+        .onChange(of: syncEngine.currentTrack) { _, newTrack in
             if let track = newTrack {
                 let trackStr = "\(track.artist) \(track.title)"
                 if trackStr != lastSeenSong {
@@ -160,7 +160,7 @@ struct ManualOverrideView: View {
                 }
             }
         }
-        .onChange(of: syncEngine.userOffset) { newValue in
+        .onChange(of: syncEngine.userOffset) { _, newValue in
             updateOffsetText(from: newValue)
         }
     }
@@ -197,11 +197,15 @@ struct ManualOverrideView: View {
     private func performSearch() {
         guard !searchQuery.isEmpty else { return }
         isSearching = true
-        LRCLIBClient.shared.searchLyrics(query: searchQuery) { results in
-            DispatchQueue.main.async {
-                self.isSearching = false
-                self.searchResults = results ?? []
+        Task { @MainActor in
+            do {
+                let results = try await LRCLIBClient.shared.searchLyrics(query: searchQuery)
+                self.searchResults = results
+            } catch {
+                print("Search failed: \(error)")
+                self.searchResults = []
             }
+            self.isSearching = false
         }
     }
     
@@ -240,26 +244,3 @@ struct ManualOverrideView: View {
     }
 }
 
-@MainActor
-class SettingsWindowManager {
-    static let shared = SettingsWindowManager()
-    var window: NSWindow?
-    
-    func show() {
-        if window == nil {
-            let settingsWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
-                styleMask: [.titled, .closable, .miniaturizable],
-                backing: .buffered,
-                defer: false
-            )
-            settingsWindow.title = "Settings"
-            settingsWindow.contentView = NSHostingView(rootView: SettingsView())
-            settingsWindow.isReleasedWhenClosed = false
-            self.window = settingsWindow
-        }
-        window?.center()
-        window?.makeKeyAndOrderFront(nil)
-        NSApplication.shared.activate(ignoringOtherApps: true)
-    }
-}

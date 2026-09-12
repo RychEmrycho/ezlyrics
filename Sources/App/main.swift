@@ -42,12 +42,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // Otherwise fetch
-        LRCLIBClient.shared.getLyrics(artist: track.artist, title: track.title, duration: track.duration) { [weak self] response in
-            guard let response = response else { return }
-            let parsed = LRCParser.parse(plain: response.plainLyrics, synced: response.syncedLyrics, trackName: response.trackName, artistName: response.artistName)
-            LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
-            DispatchQueue.main.async {
-                self?.syncEngine.currentLyrics = parsed
+        Task { [weak self] in
+            guard let self = self else { return }
+            do {
+                let response = try await LRCLIBClient.shared.getLyrics(artist: track.artist, title: track.title, duration: track.duration)
+                let parsed = LRCParser.parse(plain: response.plainLyrics, synced: response.syncedLyrics, trackName: response.trackName, artistName: response.artistName)
+                LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
+                self.syncEngine.currentLyrics = parsed
+            } catch {
+                print("Failed to fetch lyrics: \(error)")
+                // Optionally clear or set an error state on syncEngine
+                // self.syncEngine.currentLyrics = nil
             }
         }
     }

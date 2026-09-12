@@ -15,6 +15,7 @@ class MediaRemoteWrapper: @unchecked Sendable {
     
     private var process: Process?
     private var latestTrack: NowPlayingTrack?
+    var onTrackChanged: ((NowPlayingTrack?) -> Void)?
     
     private init() {
         startHelper()
@@ -99,6 +100,7 @@ class MediaRemoteWrapper: @unchecked Sendable {
             
             if rawArtist.isEmpty && rawTitle.isEmpty {
                 self.latestTrack = nil
+                self.onTrackChanged?(nil)
                 return
             }
             
@@ -137,12 +139,7 @@ class MediaRemoteWrapper: @unchecked Sendable {
             )
             
             self.latestTrack = track
-        }
-    }
-    
-    func fetchNowPlaying(completion: @escaping @Sendable (NowPlayingTrack?) -> Void) {
-        DispatchQueue.main.async {
-            completion(self.latestTrack)
+            self.onTrackChanged?(track)
         }
     }
 }

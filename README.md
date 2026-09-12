@@ -1,50 +1,42 @@
 # ezlyrics 🎵
 
-A lightweight, freely draggable macOS floating lyrics HUD. `ezlyrics` automatically detects your currently playing media, fetches perfectly time-synced lyrics, and displays them as a customizable floating overlay on your screen.
+<img src="assets/icon.png" width="128" alt="ezlyrics icon" />
 
-## ✨ Features
-- **Zero-Friction Detection:** Works out of the box with Apple Music, Spotify, Safari, Chrome, and more. No manual searching required!
-- **Draggable Overlay:** A sleek, notch-friendly floating window that you can place anywhere on your screen.
-- **Karaoke-Style Fill:** 60fps real-time syllable-by-syllable lyric highlighting.
-- **macOS Native Translation:** Uses Apple's on-device neural translation layer (macOS 15+) to translate lyrics in real-time.
-- **Smart Silence:** Detects long instrumental gaps and gracefully falls back to `•••`.
-- **Manual Overrides:** Menu bar interface to manually search, re-bind lyrics, and adjust sync offsets down to the millisecond.
+A simple, floating lyrics widget for macOS. It detects what you're playing (Spotify, Apple Music, Safari, Chrome, etc.), grabs the synced lyrics, and displays them as an overlay on your screen.
 
-## 🚀 Installation
+## Features
+- **Auto-detection**: Just play a song. No manual search needed.
+- **Draggable & Customizable**: Put the widget anywhere. Tweak fonts, sizes, colors, and layouts from the menu bar icon.
+- **Karaoke Sync**: Real-time syllable-by-syllable highlighting.
+- **Native Translation**: Uses macOS 15+ built-in neural translation to translate lyrics on the fly.
+- **Manual Overrides**: If the auto-sync is slightly off or grabbing the wrong song, use the menu bar to adjust the timing offset or search manually.
 
-### Option 1: Download Pre-compiled Release
-Since this app utilizes macOS private APIs (`MediaRemote`) to magically read media metadata without requiring complex permissions, the binary is not signed for the App Store.
+## Installation
 
-1. Go to the [Releases](../../releases) page and download `ezlyrics.app.zip`.
-2. Unzip and drag `ezlyrics.app` to your `Applications` folder.
-3. **Bypass Gatekeeper:** macOS will likely warn you that the app is from an unidentified developer. To fix this, open your Terminal and run:
+### Option 1: Download Release
+Since this app uses a private macOS framework (`MediaRemote`) to read what's playing without requiring complex accessibility permissions, it isn't signed for the App Store.
+
+1. Download `ezlyrics.app.zip` from the [Releases](../../releases) page.
+2. Unzip and drag `ezlyrics.app` to your Applications folder.
+3. Because it's unsigned, you'll need to bypass Gatekeeper. Run this in Terminal:
    ```bash
    xattr -cr /Applications/ezlyrics.app
    ```
-4. Double click `ezlyrics.app` in your Applications folder to run it!
+4. Open the app!
 
 ### Option 2: Build from Source
-If you prefer to compile the app yourself, you can use the included install script.
+If you prefer to compile it yourself:
 
-1. Clone this repository:
+1. Clone the repo:
    ```bash
    git clone https://github.com/RychEmrycho/ezlyrics.git
    cd ezlyrics
    ```
-2. Run the install script (this will compile the release binary and bundle it into your `~/Applications` folder):
+2. Run the install script to compile and move it to your `~/Applications` folder:
    ```bash
    chmod +x install.sh
    ./install.sh
    ```
 
-## ⚙️ Customization
-Click on the `ezlyrics` icon in your menu bar and select **Settings...** to customize:
-- Typography (System, Rounded, Monospaced, Serif)
-- Alignment (Left, Center, Right)
-- Font Size & Text Color
-- Background Opacity
-- Number of Lines (Single, Two Lines, Three Lines)
-- Enable/Disable macOS Native Translation
-
-## 📝 License
-This project is open-sourced under the GNU General Public License v3.0 (GPLv3). See the [LICENSE](LICENSE) file for more details.
+## License
+Open-sourced under the GPLv3 License.

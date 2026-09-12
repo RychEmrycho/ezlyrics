@@ -10,6 +10,8 @@ class SyncEngine: ObservableObject {
     // User offset in seconds
     @Published var userOffset: TimeInterval = 0
     
+    private var currentLineIndex: Int = -1
+    
     var currentLyrics: ParsedLyrics? {
         didSet {
             recalculateLines()
@@ -75,20 +77,31 @@ class SyncEngine: ObservableObject {
         
         // Calculate effective time
         let effectiveTime = currentEffectiveTime()
-        
-        // Binary search for the active line
         let lines = lyrics.lines
-        var low = 0
-        var high = lines.count - 1
-        var activeIndex = -1
         
-        while low <= high {
-            let mid = (low + high) / 2
-            if lines[mid].timestamp <= effectiveTime {
-                activeIndex = mid
-                low = mid + 1
-            } else {
-                high = mid - 1
+        // Optimize: check if we're still on the same line
+        var activeIndex = -1
+        if currentLineIndex >= 0 && currentLineIndex < lines.count {
+            let line = lines[currentLineIndex]
+            let nextTimestamp = (currentLineIndex + 1 < lines.count) ? lines[currentLineIndex + 1].timestamp : Double.greatestFiniteMagnitude
+            if effectiveTime >= line.timestamp && effectiveTime < nextTimestamp {
+                activeIndex = currentLineIndex
+            }
+        }
+        
+        // Binary search for the active line if we didn't find it via optimization
+        if activeIndex == -1 {
+            var low = 0
+            var high = lines.count - 1
+            
+            while low <= high {
+                let mid = (low + high) / 2
+                if lines[mid].timestamp <= effectiveTime {
+                    activeIndex = mid
+                    low = mid + 1
+                } else {
+                    high = mid - 1
+                }
             }
         }
         
@@ -140,7 +153,10 @@ class SyncEngine: ObservableObject {
             if nextNextLine != nextNextL {
                 nextNextLine = nextNextL
             }
+            
+            currentLineIndex = activeIndex
         } else {
+            currentLineIndex = -1
             activeLine = nil
             if !lines.isEmpty {
                 nextLine = lines[0]

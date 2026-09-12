@@ -5,11 +5,22 @@ class LyricsCache: @unchecked Sendable {
     
     private let memoryCache = NSCache<NSString, NSData>()
     
-    private var cacheDirectory: URL? {
-        guard let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
-        let dir = supportDir.appendingPathComponent("ezlyrics").appendingPathComponent("Lyrics")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true, attributes: nil)
-        return dir
+    let cacheDirectory: URL?
+    
+    init(cacheDirectory: URL? = nil) {
+        if let dir = cacheDirectory {
+            self.cacheDirectory = dir
+        } else {
+            if let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+                self.cacheDirectory = supportDir.appendingPathComponent("ezlyrics").appendingPathComponent("Lyrics")
+            } else {
+                self.cacheDirectory = nil
+            }
+        }
+        
+        if let dir = self.cacheDirectory {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true, attributes: nil)
+        }
     }
     
     private func cacheKey(artist: String, title: String) -> String {

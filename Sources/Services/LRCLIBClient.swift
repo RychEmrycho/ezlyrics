@@ -1,11 +1,38 @@
 import Foundation
 
-class LRCLIBClient: @unchecked Sendable {
+enum LRCLIBError: Error, LocalizedError {
+    case invalidURL
+    case networkError(Error)
+    case notFound
+    case decodingError(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL: return "Invalid URL"
+        case .networkError(let error): return "Network Error: \(error.localizedDescription)"
+        case .notFound: return "Lyrics not found"
+        case .decodingError(let error): return "Failed to decode lyrics: \(error.localizedDescription)"
+        }
+    }
+}
+
+protocol URLSessionProtocol: Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse)
+}
+
+extension URLSession: URLSessionProtocol {}
+
+final class LRCLIBClient: Sendable {
     static let shared = LRCLIBClient()
     
     private let baseURL = "https://lrclib.net/api"
+    private let session: URLSessionProtocol
     
-    func getLyrics(artist: String, title: String, duration: TimeInterval, completion: @escaping @Sendable (LRCLIBResponse?) -> Void) {
+    init(session: URLSessionProtocol = URLSession.shared) {
+        self.session = session
+    }
+    
+    func getLyrics(artist: String, title: String, duration: TimeInterval) async throws -> LRCLIBResponse {
         var components = URLComponents(string: "\(baseURL)/get")!
         var queryItems = [
             URLQueryItem(name: "artist_name", value: artist),
@@ -17,73 +44,62 @@ class LRCLIBClient: @unchecked Sendable {
         components.queryItems = queryItems
         
         guard let url = components.url else {
-            completion(nil)
-            return
+            throw LRCLIBError.invalidURL
         }
         
         var request = URLRequest(url: url)
         request.setValue("ezlyrics/1.0 (https://github.com/emrycho/ezlyrics)", forHTTPHeaderField: "User-Agent")
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else {
-                completion(nil)
-                return
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw LRCLIBError.networkError(error)
+        }
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+            // If direct match fails, fallback to search
+            if let firstResult = try? await searchLyrics(query: "\(artist) \(title)").first {
+                return firstResult
             }
-            
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-                // If direct match fails, fallback to search
-                self.searchLyrics(query: "\(artist) \(title)") { results in
-                    completion(results?.first)
-                }
-                return
-            }
-            
-            let decoder = JSONDecoder()
-            do {
-                let result = try decoder.decode(LRCLIBResponse.self, from: data)
-                completion(result)
-            } catch {
-                print("Failed to decode LRCLIB response: \(error)")
-                completion(nil)
-            }
-        }.resume()
+            throw LRCLIBError.notFound
+        }
+        
+        do {
+            return try JSONDecoder().decode(LRCLIBResponse.self, from: data)
+        } catch {
+            throw LRCLIBError.decodingError(error)
+        }
     }
     
-    func searchLyrics(query: String, completion: @escaping @Sendable ([LRCLIBResponse]?) -> Void) {
+    func searchLyrics(query: String) async throws -> [LRCLIBResponse] {
         var components = URLComponents(string: "\(baseURL)/search")!
         components.queryItems = [
             URLQueryItem(name: "q", value: query)
         ]
         
         guard let url = components.url else {
-            completion(nil)
-            return
+            throw LRCLIBError.invalidURL
         }
         
         var request = URLRequest(url: url)
         request.setValue("ezlyrics/1.0 (https://github.com/emrycho/ezlyrics)", forHTTPHeaderField: "User-Agent")
         
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else {
-                completion(nil)
-                return
-            }
-            
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-                // If it's not a 200 OK (e.g. 404 Not Found or 400 Bad Request), it won't be an array.
-                completion(nil)
-                return
-            }
-            
-            let decoder = JSONDecoder()
-            do {
-                let results = try decoder.decode([LRCLIBResponse].self, from: data)
-                completion(results)
-            } catch {
-                // Only log actual decoding errors on 200 OK responses
-                print("Failed to decode LRCLIB search response: \(error)")
-                completion(nil)
-            }
-        }.resume()
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw LRCLIBError.networkError(error)
+        }
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+            throw LRCLIBError.notFound
+        }
+        
+        do {
+            return try JSONDecoder().decode([LRCLIBResponse].self, from: data)
+        } catch {
+            throw LRCLIBError.decodingError(error)
+        }
     }
 }

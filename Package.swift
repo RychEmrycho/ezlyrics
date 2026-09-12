@@ -17,5 +17,9 @@ let package = Package(
                 .unsafeFlags(["-F/System/Library/PrivateFrameworks", "-framework", "MediaRemote"])
             ]
         ),
+        .testTarget(
+            name: "ezlyricsTests",
+            dependencies: ["ezlyrics"]
+        )
     ]
 )

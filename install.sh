@@ -15,9 +15,13 @@ INFO_PLIST="$APP_DIR/Contents/Info.plist"
 echo "📦 Packaging ezlyrics.app..."
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR"
+mkdir -p "$APP_DIR/Contents/Resources"
 
-# Copy binary
+# Copy binary and icon
 cp "$BUILD_PATH" "$MACOS_DIR/"
+if [ -f "AppIcon.icns" ]; then
+    cp AppIcon.icns "$APP_DIR/Contents/Resources/AppIcon.icns"
+fi
 
 # Create basic Info.plist
 cat > "$INFO_PLIST" <<EOF
@@ -29,6 +33,8 @@ cat > "$INFO_PLIST" <<EOF
     <string>ezlyrics</string>
     <key>CFBundleIdentifier</key>
     <string>com.emrycho.ezlyrics</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleName</key>
     <string>ezlyrics</string>
     <key>CFBundlePackageType</key>
