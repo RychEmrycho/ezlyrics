@@ -16,7 +16,7 @@ struct SettingsView: View {
                 }
         }
         .padding(20)
-        .frame(width: 450, height: 350)
+        .frame(minWidth: 450, minHeight: 350)
     }
     
     private var appearanceTab: some View {
@@ -177,10 +177,11 @@ class SettingsWindowManager {
         if window == nil {
             let settingsWindow = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 450, height: 350),
-                styleMask: [.titled, .closable, .miniaturizable],
+                styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered,
                 defer: false
             )
+            settingsWindow.minSize = NSSize(width: 450, height: 350)
             settingsWindow.title = "Settings"
             settingsWindow.contentView = NSHostingView(rootView: SettingsView())
             settingsWindow.isReleasedWhenClosed = false
