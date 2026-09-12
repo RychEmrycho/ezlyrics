@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ezlyrics}",
+            "name": "Debug ezlyrics",
+            "program": "${workspaceFolder:ezlyrics}/.build/debug/ezlyrics",
+            "preLaunchTask": "swift: Build Debug ezlyrics"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ezlyrics}",
+            "name": "Release ezlyrics",
+            "program": "${workspaceFolder:ezlyrics}/.build/release/ezlyrics",
+            "preLaunchTask": "swift: Build Release ezlyrics"
+        }
+    ]
+}
