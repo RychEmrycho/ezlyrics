@@ -1,6 +1,8 @@
 # ezlyrics 🎵
 
-<img src="assets/icon.png" width="128" alt="ezlyrics icon" />
+<p align="center">
+  <img src="assets/icon.png" width="128" alt="ezlyrics icon" />
+</p>
 
 A simple, floating lyrics widget for macOS. It detects what you're playing (Spotify, Apple Music, Safari, Chrome, etc.), grabs the synced lyrics, and displays them as an overlay on your screen.
 
@@ -38,6 +40,20 @@ If you prefer to compile it yourself:
    chmod +x install.sh
    ./install.sh
    ```
+
+## Screenshots
+
+### Floating Lyrics Overlay
+<img src="assets/overlay.png" width="480" alt="Floating Lyrics Overlay" />
+
+### Menu Bar, Manual Search & Full Lyrics
+<img src="assets/menu-bar.png" width="280" alt="Menu Bar Controls" />
+
+### Settings & Customization
+<p>
+  <img src="assets/settings-appearance.png" width="290" alt="Settings Appearance" />
+  <img src="assets/settings-translation.png" width="290" alt="Settings Translation" />
+</p>
 
 ## License
 Open-sourced under the GPLv3 License.
