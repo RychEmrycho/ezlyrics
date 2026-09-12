@@ -79,96 +79,92 @@ class SyncEngine: ObservableObject {
         let effectiveTime = currentEffectiveTime()
         let lines = lyrics.lines
         
-        // Optimize: check if we're still on the same line
-        var activeIndex = -1
-        if currentLineIndex >= 0 && currentLineIndex < lines.count {
-            let line = lines[currentLineIndex]
-            let nextTimestamp = (currentLineIndex + 1 < lines.count) ? lines[currentLineIndex + 1].timestamp : Double.greatestFiniteMagnitude
-            if effectiveTime >= line.timestamp && effectiveTime < nextTimestamp {
-                activeIndex = currentLineIndex
-            }
-        }
-        
-        // Binary search for the active line if we didn't find it via optimization
-        if activeIndex == -1 {
-            var low = 0
-            var high = lines.count - 1
-            
-            while low <= high {
-                let mid = (low + high) / 2
-                if lines[mid].timestamp <= effectiveTime {
-                    activeIndex = mid
-                    low = mid + 1
-                } else {
-                    high = mid - 1
-                }
-            }
-        }
+        let activeIndex = findActiveLineIndex(effectiveTime: effectiveTime, lines: lines)
         
         if activeIndex >= 0 {
-            let newActive = lines[activeIndex]
-            var nextL: LyricLine?
-            var nextNextL: LyricLine?
-            
-            if activeIndex + 1 < lines.count {
-                nextL = lines[activeIndex + 1]
-            }
-            if activeIndex + 2 < lines.count {
-                nextNextL = lines[activeIndex + 2]
-            }
-            
-            // Smart Silence detection
-            if let nextLineItem = nextL {
-                let timeSinceActive = effectiveTime - newActive.timestamp
-                let timeUntilNext = nextLineItem.timestamp - effectiveTime
-                
-                if timeSinceActive > 5.0 && timeUntilNext > 2.0 {
-                    let gapLine = LyricLine(id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!, timestamp: newActive.timestamp + 5.0, text: "•••", syllables: nil)
-                    if activeLine != gapLine {
-                        activeLine = gapLine
-                    }
-                } else {
-                    if activeLine != newActive {
-                        activeLine = newActive
-                    }
-                }
-            } else {
-                let timeSinceActive = effectiveTime - newActive.timestamp
-                if timeSinceActive > 8.0 {
-                    let endLine = LyricLine(id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!, timestamp: newActive.timestamp + 8.0, text: "♫", syllables: nil)
-                    if activeLine != endLine {
-                        activeLine = endLine
-                    }
-                } else {
-                    if activeLine != newActive {
-                        activeLine = newActive
-                    }
-                }
-            }
-            
-            if nextLine != nextL {
-                nextLine = nextL
-            }
-            
-            if nextNextLine != nextNextL {
-                nextNextLine = nextNextL
-            }
-            
-            currentLineIndex = activeIndex
+            updateActiveLines(activeIndex: activeIndex, effectiveTime: effectiveTime, lines: lines)
         } else {
             currentLineIndex = -1
             activeLine = nil
             if !lines.isEmpty {
                 nextLine = lines[0]
-                if lines.count > 1 {
-                    nextNextLine = lines[1]
-                } else {
-                    nextNextLine = nil
-                }
+                nextNextLine = lines.count > 1 ? lines[1] : nil
             } else {
                 nextLine = nil
                 nextNextLine = nil
             }
         }
+    }
+    
+    private func findActiveLineIndex(effectiveTime: TimeInterval, lines: [LyricLine]) -> Int {
+        // Optimize: check if we're still on the same line
+        if currentLineIndex >= 0 && currentLineIndex < lines.count {
+            let line = lines[currentLineIndex]
+            let nextTimestamp = (currentLineIndex + 1 < lines.count) ? lines[currentLineIndex + 1].timestamp : Double.greatestFiniteMagnitude
+            if effectiveTime >= line.timestamp && effectiveTime < nextTimestamp {
+                return currentLineIndex
+            }
+        }
+        
+        // Binary search for the active line if we didn't find it via optimization
+        var low = 0
+        var high = lines.count - 1
+        var activeIndex = -1
+        
+        while low <= high {
+            let mid = (low + high) / 2
+            if lines[mid].timestamp <= effectiveTime {
+                activeIndex = mid
+                low = mid + 1
+            } else {
+                high = mid - 1
+            }
+        }
+        return activeIndex
+    }
+    
+    private func updateActiveLines(activeIndex: Int, effectiveTime: TimeInterval, lines: [LyricLine]) {
+        let newActive = lines[activeIndex]
+        let nextL = activeIndex + 1 < lines.count ? lines[activeIndex + 1] : nil
+        let nextNextL = activeIndex + 2 < lines.count ? lines[activeIndex + 2] : nil
+        
+        // Smart Silence detection
+        if let nextLineItem = nextL {
+            let timeSinceActive = effectiveTime - newActive.timestamp
+            let timeUntilNext = nextLineItem.timestamp - effectiveTime
+            
+            if timeSinceActive > 5.0 && timeUntilNext > 2.0 {
+                let gapLine = LyricLine(id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!, timestamp: newActive.timestamp + 5.0, text: "•••", syllables: nil)
+                if activeLine != gapLine {
+                    activeLine = gapLine
+                }
+            } else {
+                if activeLine != newActive {
+                    activeLine = newActive
+                }
+            }
+        } else {
+            let timeSinceActive = effectiveTime - newActive.timestamp
+            if timeSinceActive > 8.0 {
+                let endLine = LyricLine(id: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!, timestamp: newActive.timestamp + 8.0, text: "♫", syllables: nil)
+                if activeLine != endLine {
+                    activeLine = endLine
+                }
+            } else {
+                if activeLine != newActive {
+                    activeLine = newActive
+                }
+            }
+        }
+        
+        if nextLine != nextL {
+            nextLine = nextL
+        }
+        
+        if nextNextLine != nextNextL {
+            nextNextLine = nextNextL
+        }
+        
+        currentLineIndex = activeIndex
     }
 }
