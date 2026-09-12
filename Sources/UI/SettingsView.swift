@@ -20,7 +20,8 @@ struct SettingsView: View {
     }
     
     private var appearanceTab: some View {
-        Form {
+        VStack {
+            Form {
             Section {
                 Slider(value: $settings.fontSize, in: 12...48, step: 1) {
                     Text("Font Size (\(Int(settings.fontSize))pt)")
@@ -78,12 +79,15 @@ struct SettingsView: View {
                     .foregroundColor(.secondary)
                     .padding(.bottom, 4)
             }
+            }
+            Spacer()
         }
         .padding()
     }
     
     private var translationTab: some View {
-        Form {
+        VStack {
+            Form {
             Section {
                 Toggle("Romanize Non-Latin Text", isOn: $settings.enableRomanization)
                 Toggle("Enable Translation", isOn: $settings.enableTranslation)
@@ -128,6 +132,8 @@ struct SettingsView: View {
                         .padding(.bottom, 4)
                 }
             }
+            }
+            Spacer()
         }
         .padding()
     }
