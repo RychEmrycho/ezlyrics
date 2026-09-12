@@ -86,7 +86,7 @@ struct ManualOverrideView: View {
                         }
                         .padding(.horizontal, 4)
                     }
-                    .frame(maxHeight: 200)
+                    .frame(minHeight: 150, maxHeight: 200)
                 } label: {
                     Text("Search Results")
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -235,7 +235,7 @@ struct ManualOverrideView: View {
                         }
                     }
                     .onHover { scrollState.isHoveringLyrics = $0 }
-                    .frame(maxHeight: 300)
+                    .frame(minHeight: 200, maxHeight: 300)
                     .onChange(of: syncEngine.activeLine?.id) { _, newId in
                         if scrollState.isAutoFollowing, let newId = newId {
                             withAnimation {
@@ -259,7 +259,7 @@ struct ManualOverrideView: View {
             }
         }
         .padding()
-        .frame(width: 400, height: 650)
+        .frame(width: 400)
         .onAppear {
             scrollState.startMonitoring()
             
