@@ -34,6 +34,8 @@ cat > "$INFO_PLIST" <<EOF
     <key>CFBundleIdentifier</key>
     <string>com.emrycho.ezlyrics</string>
     <key>CFBundleIconFile</key>
+    <string>AppIcon.icns</string>
+    <key>CFBundleIconName</key>
     <string>AppIcon</string>
     <key>CFBundleName</key>
     <string>ezlyrics</string>
@@ -51,5 +53,9 @@ echo "🚀 Installing to ~/Applications..."
 mkdir -p "$HOME/Applications"
 rm -rf "$HOME/Applications/ezlyrics.app"
 mv "$APP_DIR" "$HOME/Applications/"
+
+# Refresh Launch Services and Spotlight metadata
+touch "$HOME/Applications/ezlyrics.app"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$HOME/Applications/ezlyrics.app" || true
 
 echo "✅ Done! You can now launch ezlyrics from ~/Applications/ezlyrics.app"
