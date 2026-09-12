@@ -2,6 +2,32 @@ import SwiftUI
 import AppKit
 @preconcurrency import Translation
 
+@MainActor
+class ScrollMonitorState: ObservableObject {
+    @Published var isAutoFollowing = true
+    @Published var isHoveringLyrics = false
+    private var scrollMonitor: Any?
+
+    func startMonitoring() {
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            guard let self = self else { return event }
+            if self.isAutoFollowing && self.isHoveringLyrics {
+                DispatchQueue.main.async {
+                    self.isAutoFollowing = false
+                }
+            }
+            return event
+        }
+    }
+
+    func stopMonitoring() {
+        if let monitor = scrollMonitor {
+            NSEvent.removeMonitor(monitor)
+            scrollMonitor = nil
+        }
+    }
+}
+
 struct ManualOverrideView: View {
     @ObservedObject var syncEngine: SyncEngine
     @ObservedObject private var settings = SettingsManager.shared
@@ -10,10 +36,8 @@ struct ManualOverrideView: View {
     @State private var isSearching = false
     @State private var lastSeenSong = ""
     @State private var translatedLines: [UUID: String] = [:]
-    @State private var isAutoFollowing = true
-    @State private var scrollMonitor: Any?
+    @StateObject private var scrollState = ScrollMonitorState()
     @State private var isShowingSearchResults = false
-    @State private var isHoveringLyrics = false
     
     @State private var offsetInput: String = "0"
     
@@ -123,18 +147,18 @@ struct ManualOverrideView: View {
                             Spacer()
                             
                             Button(action: {
-                                isAutoFollowing = true
+                                scrollState.isAutoFollowing = true
                                 if let activeId = syncEngine.activeLine?.id {
                                     withAnimation {
                                         proxy.scrollTo(activeId, anchor: .center)
                                     }
                                 }
                             }) {
-                                Image(systemName: isAutoFollowing ? "location.fill" : "location")
-                                    .foregroundColor(isAutoFollowing ? .accentColor : .primary)
+                                Image(systemName: scrollState.isAutoFollowing ? "location.fill" : "location")
+                                    .foregroundColor(scrollState.isAutoFollowing ? .accentColor : .primary)
                             }
                             .buttonStyle(.plain)
-                            .help(isAutoFollowing ? "Following active line" : "Follow active line")
+                            .help(scrollState.isAutoFollowing ? "Following active line" : "Follow active line")
                             .padding(.trailing, 4)
                             
                             if settings.enableTranslation {
@@ -210,10 +234,10 @@ struct ManualOverrideView: View {
                             }
                         }
                     }
-                    .onHover { isHoveringLyrics = $0 }
+                    .onHover { scrollState.isHoveringLyrics = $0 }
                     .frame(maxHeight: 300)
                     .onChange(of: syncEngine.activeLine?.id) { _, newId in
-                        if isAutoFollowing, let newId = newId {
+                        if scrollState.isAutoFollowing, let newId = newId {
                             withAnimation {
                                 proxy.scrollTo(newId, anchor: .center)
                             }
@@ -237,14 +261,7 @@ struct ManualOverrideView: View {
         .padding()
         .frame(width: 400, height: 650)
         .onAppear {
-            scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
-                if isAutoFollowing && isHoveringLyrics {
-                    DispatchQueue.main.async {
-                        isAutoFollowing = false
-                    }
-                }
-                return event
-            }
+            scrollState.startMonitoring()
             
             updateOffsetText(from: syncEngine.userOffset)
             if let track = syncEngine.currentTrack {
@@ -257,9 +274,7 @@ struct ManualOverrideView: View {
             }
         }
         .onDisappear {
-            if let monitor = scrollMonitor {
-                NSEvent.removeMonitor(monitor)
-            }
+            scrollState.stopMonitoring()
         }
         .onChange(of: syncEngine.currentTrack) { _, newTrack in
             if let track = newTrack {
