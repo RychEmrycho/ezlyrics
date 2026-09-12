@@ -61,10 +61,10 @@ struct ManualOverrideView: View {
                 TextField("Search LRCLIB...", text: $searchQuery)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .onSubmit {
-                        performSearch()
+                        performSearch(expandResults: true)
                     }
                 Button("Search") {
-                    performSearch()
+                    performSearch(expandResults: true)
                 }
             }
             .padding(.top, 8)
@@ -101,48 +101,11 @@ struct ManualOverrideView: View {
             
             Divider()
             
-            HStack {
-                Text("Sync Offset:")
-                    .font(.headline)
-                Spacer()
-                
-                Button(action: { adjustOffset(by: -0.1) }) {
-                    Image(systemName: "minus.square")
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                
-                TextField("Offset", text: $offsetInput)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 60)
-                    .multilineTextAlignment(.trailing)
-                    .onSubmit {
-                        applyOffset()
-                    }
-                
-                Button(action: { adjustOffset(by: 0.1) }) {
-                    Image(systemName: "plus.square")
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                
-                Text("ms")
-                    .foregroundColor(.secondary)
-                    .font(.subheadline)
-                
-                Button(action: { syncEngine.userOffset = 0 }) {
-                    Image(systemName: "arrow.counterclockwise.circle.fill")
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 4)
-            }
-            .padding(.vertical, 4)
-            
             if let lyrics = syncEngine.currentLyrics, lyrics.isSynced {
                 VStack(alignment: .leading, spacing: 4) {
                     ScrollViewReader { proxy in
                         HStack {
-                            Text("Sync to Line:")
+                            Text("Full Lyrics:")
                                 .font(.headline)
                             Spacer()
                             
@@ -194,6 +157,12 @@ struct ManualOverrideView: View {
                                                     .font(.system(size: 10, weight: .semibold))
                                                     .foregroundColor(syncEngine.activeLine?.id == line.id ? .white : .white.opacity(0.6))
                                                 
+                                                if settings.showTimestampsInMenu {
+                                                    Text(formatTimestamp(line.timestamp))
+                                                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                
                                                 Text(romanized.isEmpty ? "♫" : romanized)
                                                     .font(.body)
                                                     .multilineTextAlignment(.leading)
@@ -207,11 +176,18 @@ struct ManualOverrideView: View {
                                                 .fixedSize(horizontal: false, vertical: true)
                                                 .foregroundColor(.secondary)
                                         } else {
-                                            Text(line.text.isEmpty ? "♫" : line.text)
-                                                .font(.body)
-                                                .multilineTextAlignment(.leading)
-                                                .fixedSize(horizontal: false, vertical: true)
-                                                .foregroundColor(syncEngine.activeLine?.id == line.id ? .accentColor : .primary)
+                                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                                if settings.showTimestampsInMenu {
+                                                    Text(formatTimestamp(line.timestamp))
+                                                        .font(.system(size: 10, weight: .regular, design: .monospaced))
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                Text(line.text.isEmpty ? "♫" : line.text)
+                                                    .font(.body)
+                                                    .multilineTextAlignment(.leading)
+                                                    .fixedSize(horizontal: false, vertical: true)
+                                                    .foregroundColor(syncEngine.activeLine?.id == line.id ? .accentColor : .primary)
+                                            }
                                         }
                                         
                                         if settings.enableTranslation, let translated = translatedLines[line.id], !translated.isEmpty {
@@ -249,8 +225,47 @@ struct ManualOverrideView: View {
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                MenuToggleRow(title: "Show Lyric", iconName: "text.quote", isOn: $settings.showOverlay)
-                MenuItemRow(title: "Setting", iconName: "gearshape") {
+                HStack {
+                    Text("Sync Offset:")
+                        .font(.headline)
+                    Spacer()
+                    
+                    Button(action: { adjustOffset(by: -0.1) }) {
+                        Image(systemName: "minus.square")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    TextField("Offset", text: $offsetInput)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 60)
+                        .multilineTextAlignment(.trailing)
+                        .onSubmit {
+                            applyOffset()
+                        }
+                    
+                    Button(action: { adjustOffset(by: 0.1) }) {
+                        Image(systemName: "plus.square")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Text("ms")
+                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+                    
+                    Button(action: { syncEngine.userOffset = 0 }) {
+                        Image(systemName: "arrow.counterclockwise.circle.fill")
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 4)
+                }
+                .padding(.vertical, 4)
+                
+                Divider()
+                
+                MenuToggleRow(title: "Show Overlay", iconName: "text.quote", isOn: $settings.showOverlay)
+                MenuItemRow(title: "Settings", iconName: "gearshape") {
                     openSettings()
                 }
                 MenuItemRow(title: "Quit", iconName: "power") {
@@ -317,14 +332,14 @@ struct ManualOverrideView: View {
         offsetInput = "\(ms)"
     }
     
-    private func performSearch() {
+    private func performSearch(expandResults: Bool = false) {
         guard !searchQuery.isEmpty else { return }
         isSearching = true
         Task { @MainActor in
             do {
                 let results = try await LRCLIBClient.shared.searchLyrics(query: searchQuery)
                 self.searchResults = results
-                if !results.isEmpty {
+                if !results.isEmpty && expandResults {
                     self.isShowingSearchResults = true
                 }
             } catch {
@@ -363,6 +378,13 @@ struct ManualOverrideView: View {
             }
             syncEngine.userOffset = line.timestamp - currentElapsed
         }
+    }
+    
+    private func formatTimestamp(_ time: TimeInterval) -> String {
+        let mins = Int(time) / 60
+        let secs = Int(time) % 60
+        let ms = Int((time.truncatingRemainder(dividingBy: 1)) * 100)
+        return String(format: "[%02d:%02d.%02d]", mins, secs, ms)
     }
     
     private func openSettings() {
