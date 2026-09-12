@@ -13,6 +13,7 @@ struct ManualOverrideView: View {
     @State private var isAutoFollowing = true
     @State private var scrollMonitor: Any?
     @State private var isShowingSearchResults = false
+    @State private var isHoveringLyrics = false
     
     @State private var offsetInput: String = "0"
     
@@ -209,6 +210,7 @@ struct ManualOverrideView: View {
                             }
                         }
                     }
+                    .onHover { isHoveringLyrics = $0 }
                     .frame(maxHeight: 300)
                     .onChange(of: syncEngine.activeLine?.id) { _, newId in
                         if isAutoFollowing, let newId = newId {
@@ -233,9 +235,10 @@ struct ManualOverrideView: View {
             }
         }
         .padding()
+        .frame(width: 400, height: 650)
         .onAppear {
             scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
-                if isAutoFollowing {
+                if isAutoFollowing && isHoveringLyrics {
                     DispatchQueue.main.async {
                         isAutoFollowing = false
                     }
