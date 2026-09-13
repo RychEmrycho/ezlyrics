@@ -11,7 +11,9 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
     @AppStorage("backgroundColorHex") var backgroundColorHex: String = "#000000"
     @AppStorage("backgroundOpacity") var backgroundOpacity: Double = 0.5
     @AppStorage("enableTranslation") var enableTranslation: Bool = false
+    @AppStorage("translationDisplayMode") var translationDisplayMode: String = "both"
     @AppStorage("enableRomanization") var enableRomanization: Bool = false
+    @AppStorage("romanizationDisplayMode") var romanizationDisplayMode: String = "both"
     @AppStorage("translationSource") var translationSource: String = "auto"
     @AppStorage("translationTarget") var translationTarget: String = "en"
     @AppStorage("typography") var typography: String = "rounded"

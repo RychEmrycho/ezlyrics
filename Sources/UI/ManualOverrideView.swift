@@ -185,7 +185,7 @@ struct ManualOverrideView: View {
                                     }
                                 }) {
                                     VStack(alignment: .leading, spacing: 1) {
-                                        if settings.enableRomanization, let romanized = Romanizer.romanize(line.text) {
+                                        if settings.enableRomanization && settings.romanizationDisplayMode != "overlayOnly", let romanized = Romanizer.romanize(line.text) {
                                             HStack(alignment: .firstTextBaseline, spacing: 4) {
                                                 if lyrics.isSynced {
                                                     Image(systemName: "waveform")
@@ -236,7 +236,7 @@ struct ManualOverrideView: View {
                                             }
                                         }
                                         
-                                        if settings.enableTranslation, let translated = translatedLines[line.id], !translated.isEmpty {
+                                        if settings.enableTranslation && settings.translationDisplayMode != "overlayOnly", let translated = translatedLines[line.id], !translated.isEmpty {
                                             HStack(alignment: .top, spacing: 3) {
                                                 Image(systemName: "translate")
                                                     .font(.system(size: 9))
@@ -358,7 +358,7 @@ struct ManualOverrideView: View {
         .applyBatchTranslation(
             lines: syncEngine.currentLyrics?.lines ?? [],
             detectedLanguage: syncEngine.currentLyrics?.detectedLanguage,
-            isEnabled: settings.enableTranslation,
+            isEnabled: settings.enableTranslation && settings.translationDisplayMode != "overlayOnly",
             sourceLanguage: settings.translationSource,
             targetLanguage: settings.translationTarget,
             translatedLines: $translatedLines
