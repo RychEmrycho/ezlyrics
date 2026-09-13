@@ -50,7 +50,7 @@ struct LyricsOverlayView: View {
                 TimelineView(.animation) { _ in
                     let effectiveTime = syncEngine.currentEffectiveTime()
                     
-                    let isRomanized = settings.enableRomanization && Romanizer.romanize(active.text) != nil
+                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer.romanize(active.text) != nil
                     let mainText = isRomanized ? Romanizer.romanize(active.text)! : active.text
                     let subText = isRomanized ? active.text : nil
                     
@@ -82,7 +82,7 @@ struct LyricsOverlayView: View {
                     }
                 }
                 
-                if settings.enableTranslation, let translated = translatedLines[active.id], !translated.isEmpty {
+                if settings.enableTranslation && settings.translationDisplayMode != "fullLyricsOnly", let translated = translatedLines[active.id], !translated.isEmpty {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Image(systemName: "translate")
                             .font(.system(size: max(8, settings.fontSize - 10), weight: .semibold))
@@ -105,7 +105,7 @@ struct LyricsOverlayView: View {
             
             if settings.lineLayout == "two" || settings.lineLayout == "three" {
                 if let next = syncEngine.nextLine {
-                    let isRomanized = settings.enableRomanization && Romanizer.romanize(next.text) != nil
+                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer.romanize(next.text) != nil
                     let textToShow = isRomanized ? Romanizer.romanize(next.text)! : next.text
                     
                     HStack(alignment: .center, spacing: 6) {
@@ -127,7 +127,7 @@ struct LyricsOverlayView: View {
             
             if settings.lineLayout == "three" {
                 if let nextNext = syncEngine.nextNextLine {
-                    let isRomanized = settings.enableRomanization && Romanizer.romanize(nextNext.text) != nil
+                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer.romanize(nextNext.text) != nil
                     let textToShow = isRomanized ? Romanizer.romanize(nextNext.text)! : nextNext.text
                     
                     HStack(alignment: .center, spacing: 6) {
@@ -159,7 +159,7 @@ struct LyricsOverlayView: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle()) // Make the transparent part clickable for dragging
-        .applyBatchTranslation(lines: syncEngine.currentLyrics?.lines ?? [], detectedLanguage: syncEngine.currentLyrics?.detectedLanguage, isEnabled: settings.enableTranslation, sourceLanguage: settings.translationSource, targetLanguage: settings.translationTarget, translatedLines: $translatedLines)
+        .applyBatchTranslation(lines: syncEngine.currentLyrics?.lines ?? [], detectedLanguage: syncEngine.currentLyrics?.detectedLanguage, isEnabled: settings.enableTranslation && settings.translationDisplayMode != "fullLyricsOnly", sourceLanguage: settings.translationSource, targetLanguage: settings.translationTarget, translatedLines: $translatedLines)
     }
     
 }
@@ -280,21 +280,25 @@ struct TranslationWrapper: ViewModifier {
                     translatedText = nil
                 }
             }
-            .translationTask(config) { session in
-                guard isEnabled else { return }
-                do {
-                    // Only call prepareTranslation for explicit source language —
-                    // for auto-detect, skip it to avoid the language-picker popup.
-                    // If translation fails silently, translatedText stays nil.
-                    if sourceLanguage != "auto" {
-                        try await session.prepareTranslation()
+            .background(
+                Group {
+                    if let config = config {
+                        Color.clear
+                            .translationTask(config) { session in
+                                guard isEnabled else { return }
+                                do {
+                                    if sourceLanguage != "auto" {
+                                        try await session.prepareTranslation()
+                                    }
+                                    let response = try await session.translate(text)
+                                    translatedText = response.targetText
+                                } catch {
+                                    translatedText = nil
+                                }
+                            }
                     }
-                    let response = try await session.translate(text)
-                    translatedText = response.targetText
-                } catch {
-                    translatedText = nil
                 }
-            }
+            )
     }
 }
 
@@ -332,20 +336,27 @@ struct BatchTranslationWrapper: ViewModifier {
             .onChange(of: sourceLanguage) { _, _ in triggerTranslation() }
             .onChange(of: targetLanguage) { _, _ in triggerTranslation() }
             .onChange(of: lines.first?.id) { _, _ in triggerTranslation() }
-            .translationTask(config) { session in
-                do {
-                    if sourceLanguage != "auto" {
-                        try await session.prepareTranslation()
+            .background(
+                Group {
+                    if let config = config {
+                        Color.clear
+                            .translationTask(config) { session in
+                                do {
+                                    if sourceLanguage != "auto" {
+                                        try await session.prepareTranslation()
+                                    }
+                                    translatedLines = [:]
+                                    for line in lines where !line.text.isEmpty && line.text != "•••" && line.text != "♫" {
+                                        let response = try await session.translate(line.text)
+                                        translatedLines[line.id] = response.targetText
+                                    }
+                                } catch {
+                                    translatedLines = [:]
+                                }
+                            }
                     }
-                    translatedLines = [:]
-                    for line in lines where !line.text.isEmpty && line.text != "•••" && line.text != "♫" {
-                        let response = try await session.translate(line.text)
-                        translatedLines[line.id] = response.targetText
-                    }
-                } catch {
-                    translatedLines = [:]
                 }
-            }
+            )
     }
     
     private func triggerTranslation() {

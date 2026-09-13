@@ -105,7 +105,21 @@ struct SettingsView: View {
                 Form {
             Section {
                 Toggle("Romanize Non-Latin Text", isOn: $settings.enableRomanization)
+                if settings.enableRomanization {
+                    Picker("Display On", selection: $settings.romanizationDisplayMode) {
+                        Text("Both").tag("both")
+                        Text("Overlay Only").tag("overlayOnly")
+                        Text("Full Lyrics Only").tag("fullLyricsOnly")
+                    }
+                }
                 Toggle("Enable Translation", isOn: $settings.enableTranslation)
+                if settings.enableTranslation {
+                    Picker("Display On", selection: $settings.translationDisplayMode) {
+                        Text("Both").tag("both")
+                        Text("Overlay Only").tag("overlayOnly")
+                        Text("Full Lyrics Only").tag("fullLyricsOnly")
+                    }
+                }
             } header: {
                 Text("General")
                     .font(.headline)
