@@ -10,6 +10,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let syncEngine = SyncEngine()
     let nowPlayingMonitor = NowPlayingMonitor()
     var cancellables = Set<AnyCancellable>()
+    var hideHUDTask: Task<Void, Never>?
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Setup Window
@@ -42,11 +43,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if let track = track {
                     self.fetchLyrics(for: track)
                     if SettingsManager.shared.showOverlay {
+                        self.hideHUDTask?.cancel()
                         self.windowController.showHUD()
                     }
                 } else {
                     self.syncEngine.currentLyrics = nil
+                    self.hideHUDTask?.cancel()
                     self.windowController.hideHUD()
+                }
+            }
+            .store(in: &cancellables)
+            
+        syncEngine.$currentLyrics
+            .receive(on: RunLoop.main)
+            .sink { [weak self] lyrics in
+                guard let self = self else { return }
+                self.hideHUDTask?.cancel()
+                if let lyrics = lyrics {
+                    if SettingsManager.shared.showOverlay {
+                        self.windowController.showHUD()
+                        if !lyrics.isSynced {
+                            self.hideHUDTask = Task {
+                                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                                if !Task.isCancelled {
+                                    self.windowController.hideHUD()
+                                }
+                            }
+                        }
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -76,9 +100,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         self.syncEngine.currentLyrics = parsed
                     } else {
                         print("Failed to fetch lyrics: No lyrics found in search results.")
+                        self.syncEngine.currentLyrics = ParsedLyrics(trackName: track.title, artistName: track.artist, isSynced: false, lines: [], detectedLanguage: nil)
                     }
                 } catch {
                     print("Failed to fetch lyrics via search: \(error)")
+                    self.syncEngine.currentLyrics = ParsedLyrics(trackName: track.title, artistName: track.artist, isSynced: false, lines: [], detectedLanguage: nil)
                 }
             }
         }

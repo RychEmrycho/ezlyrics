@@ -41,12 +41,17 @@ struct ManualOverrideView: View {
     
     @State private var offsetInput: String = "0"
     
+    @State private var isAutoScrollingPlain = false
+    @State private var plainScrollSpeedLevel: Int = 0
+    @State private var currentPlainLineIndex: Int = 0
+    @State private var autoScrollTask: Task<Void, Never>?
+    
     var body: some View {
         VStack {
             Text("Now Playing")
                 .font(.headline)
             if let track = syncEngine.currentTrack {
-                Text("\(track.artist) - \(track.title)")
+                Text("\(track.artist) - \(track.title) (\(Int(track.duration))s)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             } else {
@@ -101,7 +106,7 @@ struct ManualOverrideView: View {
             
             Divider()
             
-            if let lyrics = syncEngine.currentLyrics, lyrics.isSynced {
+            if let lyrics = syncEngine.currentLyrics, !lyrics.lines.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     ScrollViewReader { proxy in
                         HStack {
@@ -109,20 +114,40 @@ struct ManualOverrideView: View {
                                 .font(.headline)
                             Spacer()
                             
-                            Button(action: {
-                                scrollState.isAutoFollowing = true
-                                if let activeId = syncEngine.activeLine?.id {
-                                    withAnimation {
-                                        proxy.scrollTo(activeId, anchor: .center)
+                            if lyrics.isSynced {
+                                Button(action: {
+                                    scrollState.isAutoFollowing = true
+                                    if let activeId = syncEngine.activeLine?.id {
+                                        withAnimation {
+                                            proxy.scrollTo(activeId, anchor: .center)
+                                        }
                                     }
+                                }) {
+                                    Image(systemName: scrollState.isAutoFollowing ? "location.fill" : "location")
+                                        .foregroundColor(scrollState.isAutoFollowing ? .accentColor : .primary)
                                 }
-                            }) {
-                                Image(systemName: scrollState.isAutoFollowing ? "location.fill" : "location")
-                                    .foregroundColor(scrollState.isAutoFollowing ? .accentColor : .primary)
+                                .buttonStyle(.plain)
+                                .help(scrollState.isAutoFollowing ? "Following active line" : "Follow active line")
+                                .padding(.trailing, 4)
                             }
-                            .buttonStyle(.plain)
-                            .help(scrollState.isAutoFollowing ? "Following active line" : "Follow active line")
-                            .padding(.trailing, 4)
+                            
+                            if !lyrics.isSynced {
+                                Button(action: {
+                                    toggleAutoScroll(proxy: proxy, lines: lyrics.lines)
+                                }) {
+                                    Image(systemName: isAutoScrollingPlain ? "pause.fill" : "play.fill")
+                                        .foregroundColor(isAutoScrollingPlain ? .accentColor : .primary)
+                                }
+                                .buttonStyle(.plain)
+                                .help(isAutoScrollingPlain ? "Pause auto-scroll" : "Start auto-scroll")
+                                
+                                Stepper(value: $plainScrollSpeedLevel, in: 0...10, step: 1) {
+                                    Text(plainScrollSpeedLevel == 0 ? "Speed: Off" : "Speed: \(plainScrollSpeedLevel)")
+                                        .font(.caption)
+                                }
+                                .frame(width: 80)
+                                .padding(.trailing, 4)
+                            }
                             
                             if settings.enableTranslation {
                                 Picker("", selection: $settings.translationSource) {
@@ -148,16 +173,31 @@ struct ManualOverrideView: View {
                         LazyVStack(alignment: .leading) {
                             ForEach(lyrics.lines) { line in
                                 Button(action: {
-                                    syncToLine(line)
+                                    if lyrics.isSynced {
+                                        syncToLine(line)
+                                    } else {
+                                        if let idx = lyrics.lines.firstIndex(where: { $0.id == line.id }) {
+                                            currentPlainLineIndex = idx
+                                            withAnimation {
+                                                proxy.scrollTo(line.id, anchor: .center)
+                                            }
+                                        }
+                                    }
                                 }) {
                                     VStack(alignment: .leading, spacing: 1) {
                                         if settings.enableRomanization, let romanized = Romanizer.romanize(line.text) {
                                             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                                Image(systemName: "waveform")
-                                                    .font(.system(size: 10, weight: .semibold))
-                                                    .foregroundColor(syncEngine.activeLine?.id == line.id ? .white : .white.opacity(0.6))
+                                                if lyrics.isSynced {
+                                                    Image(systemName: "waveform")
+                                                        .font(.system(size: 10, weight: .semibold))
+                                                        .foregroundColor(syncEngine.activeLine?.id == line.id ? .white : .white.opacity(0.6))
+                                                } else if isLineActive(lyrics: lyrics, line: line) {
+                                                    Image(systemName: "play.fill")
+                                                        .font(.system(size: 10, weight: .semibold))
+                                                        .foregroundColor(.accentColor)
+                                                }
                                                 
-                                                if settings.showTimestampsInMenu {
+                                                if settings.showTimestampsInMenu && lyrics.isSynced {
                                                     Text(formatTimestamp(line.timestamp))
                                                         .font(.system(size: 10, weight: .regular, design: .monospaced))
                                                         .foregroundColor(.secondary)
@@ -167,7 +207,7 @@ struct ManualOverrideView: View {
                                                     .font(.body)
                                                     .multilineTextAlignment(.leading)
                                                     .fixedSize(horizontal: false, vertical: true)
-                                                    .foregroundColor(syncEngine.activeLine?.id == line.id ? .accentColor : .primary)
+                                                    .foregroundColor(isLineActive(lyrics: lyrics, line: line) ? .accentColor : .primary)
                                             }
                                             
                                             Text(line.text)
@@ -177,7 +217,13 @@ struct ManualOverrideView: View {
                                                 .foregroundColor(.secondary)
                                         } else {
                                             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                                if settings.showTimestampsInMenu {
+                                                if lyrics.isSynced {
+                                                } else if isLineActive(lyrics: lyrics, line: line) {
+                                                    Image(systemName: "play.fill")
+                                                        .font(.system(size: 10, weight: .semibold))
+                                                        .foregroundColor(.accentColor)
+                                                }
+                                                if settings.showTimestampsInMenu && lyrics.isSynced {
                                                     Text(formatTimestamp(line.timestamp))
                                                         .font(.system(size: 10, weight: .regular, design: .monospaced))
                                                         .foregroundColor(.secondary)
@@ -186,7 +232,7 @@ struct ManualOverrideView: View {
                                                     .font(.body)
                                                     .multilineTextAlignment(.leading)
                                                     .fixedSize(horizontal: false, vertical: true)
-                                                    .foregroundColor(syncEngine.activeLine?.id == line.id ? .accentColor : .primary)
+                                                    .foregroundColor(isLineActive(lyrics: lyrics, line: line) ? .accentColor : .primary)
                                             }
                                         }
                                         
@@ -292,6 +338,11 @@ struct ManualOverrideView: View {
             scrollState.stopMonitoring()
         }
         .onChange(of: syncEngine.currentTrack) { _, newTrack in
+            isAutoScrollingPlain = false
+            autoScrollTask?.cancel()
+            autoScrollTask = nil
+            currentPlainLineIndex = 0
+            
             if let track = newTrack {
                 let trackStr = "\(track.artist) \(track.title)"
                 if trackStr != lastSeenSong {
@@ -380,11 +431,60 @@ struct ManualOverrideView: View {
         }
     }
     
+    private var waitTimeForScroll: Double {
+        if plainScrollSpeedLevel == 0 {
+            return .infinity
+        }
+        let times = [6.0, 5.0, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5]
+        let idx = max(0, min(times.count - 1, plainScrollSpeedLevel - 1))
+        return times[idx]
+    }
+    
     private func formatTimestamp(_ time: TimeInterval) -> String {
         let mins = Int(time) / 60
         let secs = Int(time) % 60
         let ms = Int((time.truncatingRemainder(dividingBy: 1)) * 100)
         return String(format: "[%02d:%02d.%02d]", mins, secs, ms)
+    }
+    
+    private func isLineActive(lyrics: ParsedLyrics, line: LyricLine) -> Bool {
+        if lyrics.isSynced {
+            return syncEngine.activeLine?.id == line.id
+        } else {
+            return isAutoScrollingPlain && lyrics.lines.firstIndex(where: { $0.id == line.id }) == currentPlainLineIndex
+        }
+    }
+    
+    private func toggleAutoScroll(proxy: ScrollViewProxy, lines: [LyricLine]) {
+        if isAutoScrollingPlain {
+            isAutoScrollingPlain = false
+            autoScrollTask?.cancel()
+            autoScrollTask = nil
+        } else {
+            isAutoScrollingPlain = true
+            autoScrollTask = Task {
+                var accumulated: Double = 0
+                let step: Double = 0.1
+                while !Task.isCancelled && currentPlainLineIndex < lines.count - 1 {
+                    try? await Task.sleep(nanoseconds: UInt64(step * 1_000_000_000))
+                    accumulated += step
+                    let waitTime = waitTimeForScroll
+                    if accumulated >= waitTime {
+                        accumulated = 0
+                        currentPlainLineIndex += 1
+                        let nextId = lines[currentPlainLineIndex].id
+                        await MainActor.run {
+                            withAnimation(.easeInOut) {
+                                proxy.scrollTo(nextId, anchor: .center)
+                            }
+                        }
+                    }
+                }
+                await MainActor.run {
+                    isAutoScrollingPlain = false
+                }
+            }
+        }
     }
     
     private func openSettings() {

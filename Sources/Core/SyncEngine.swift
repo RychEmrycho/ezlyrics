@@ -12,7 +12,7 @@ class SyncEngine: ObservableObject {
     
     private var currentLineIndex: Int = -1
     
-    var currentLyrics: ParsedLyrics? {
+    @Published var currentLyrics: ParsedLyrics? {
         didSet {
             recalculateLines()
         }
