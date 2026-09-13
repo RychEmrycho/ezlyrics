@@ -23,6 +23,9 @@ A simple, floating lyrics widget for macOS. It detects what you're playing (Spot
 ## Installation
 
 ### Option 1: Download Release
+> [!NOTE]
+> Due to current issues with GitHub CI building macOS 15 specific features, the pre-built binaries on the Releases page may be outdated or unavailable. If you want the latest features, please use **Option 2: Build from Source**.
+
 Since this app uses a private macOS framework (`MediaRemote`) to read what's playing without requiring complex accessibility permissions, it isn't signed for the App Store.
 
 1. Download `ezlyrics.app.zip` from the [Releases](../../releases) page.
@@ -34,7 +37,7 @@ Since this app uses a private macOS framework (`MediaRemote`) to read what's pla
 4. Open the app!
 
 ### Option 2: Build from Source
-If you prefer to compile it yourself:
+To compile the app yourself, you will need **Xcode 16** (or later) or the corresponding **Command Line Tools**. This is required because the project relies on the new `Translation` framework introduced in the macOS 15 SDK.
 
 1. Clone the repo:
    ```bash
