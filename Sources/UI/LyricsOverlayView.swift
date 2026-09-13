@@ -8,6 +8,17 @@ struct LyricsOverlayView: View {
     
     @State private var translatedLines: [UUID: String] = [:]
     
+    private var fallbackText: String {
+        if let lyrics = syncEngine.currentLyrics {
+            if lyrics.lines.isEmpty {
+                return "No lyrics found"
+            } else if !lyrics.isSynced {
+                return "Lyrics not synced"
+            }
+        }
+        return "•••"
+    }
+    
     private var fontDesign: Font.Design {
         switch settings.typography {
         case "system": return .default
@@ -87,7 +98,7 @@ struct LyricsOverlayView: View {
                     .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 }
             } else {
-                Text("•••")
+                Text(fallbackText)
                     .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))
                     .foregroundColor(Color(hex: settings.textColorHex).opacity(0.5))
             }

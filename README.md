@@ -4,7 +4,7 @@
   <img src="assets/icon.png" width="128" alt="ezlyrics icon" />
 </p>
 
-A simple, floating lyrics widget for macOS. It detects what you're playing (Spotify, Apple Music, Safari, Chrome, etc.), grabs the synced lyrics, and displays them as an overlay on your screen.
+A simple, floating lyrics widget for macOS. It detects what you're playing (Spotify, Apple Music, Safari, Chrome, etc.), grabs the lyrics, and displays them as an overlay on your screen.
 
 ## Features
 - **Auto-detection**: Just play a song. No manual search needed.
@@ -13,6 +13,12 @@ A simple, floating lyrics widget for macOS. It detects what you're playing (Spot
 - **Auto-Romanization**: Automatically detects non-Latin lyrics (Japanese, Korean, Chinese, Cyrillic, etc.) and converts them to Latin script (Romaji, Pinyin, etc.) so you can easily sing along.
 - **Native Translation**: Uses macOS 15+ built-in neural translation to intelligently translate lyrics on the fly.
 - **Manual Overrides**: If the auto-sync is slightly off or grabs the wrong song, use the menu bar to adjust the timing offset with precision `+/- 100ms` steppers, track the active line (and its exact timestamp) via the auto-scrolling Full Lyrics view, or search manually.
+- **Smart Overlay Auto-Hide**: The floating lyrics widget intelligently auto-hides if the current song has no lyrics available or is an instrumental, fading out unobtrusively after 3 seconds. 
+- **Plain Lyrics Auto-Scroller**: Got a song with only plain text lyrics? No problem! Toggle the auto-scroller in the menu bar and adjust the speed to smoothly scroll through plain lyrics line-by-line while you read along.
+
+## Requirements
+- **macOS 14.0 (Sonoma)** or later.
+- Native Translation feature requires **macOS 15.0 (Sequoia)** or later.
 
 ## Installation
 
