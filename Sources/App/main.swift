@@ -20,13 +20,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             windowController.showHUD()
         }
         
+        if SettingsManager.shared.isAppEnabled {
+            MediaRemoteWrapper.shared.startHelper()
+        }
+        
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                if SettingsManager.shared.showOverlay && self.nowPlayingMonitor.currentTrack != nil {
-                    self.windowController.showHUD()
+                
+                if SettingsManager.shared.isAppEnabled {
+                    MediaRemoteWrapper.shared.startHelper()
+                    if SettingsManager.shared.showOverlay && self.nowPlayingMonitor.currentTrack != nil {
+                        self.windowController.showHUD()
+                    } else {
+                        self.windowController.hideHUD()
+                    }
                 } else {
+                    MediaRemoteWrapper.shared.stopHelper()
                     self.windowController.hideHUD()
+                    self.syncEngine.currentTrack = nil
+                    self.syncEngine.currentLyrics = nil
                 }
             }
             .store(in: &cancellables)
@@ -42,7 +55,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.syncEngine.currentTrack = track
                 if let track = track {
                     self.fetchLyrics(for: track)
-                    if SettingsManager.shared.showOverlay {
+                    if SettingsManager.shared.showOverlay && SettingsManager.shared.isAppEnabled {
                         self.hideHUDTask?.cancel()
                         self.windowController.showHUD()
                     }
@@ -60,7 +73,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self = self else { return }
                 self.hideHUDTask?.cancel()
                 if let lyrics = lyrics {
-                    if SettingsManager.shared.showOverlay {
+                    if SettingsManager.shared.showOverlay && SettingsManager.shared.isAppEnabled {
                         self.windowController.showHUD()
                         if !lyrics.isSynced {
                             self.hideHUDTask = Task {
