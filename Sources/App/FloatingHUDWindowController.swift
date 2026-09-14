@@ -23,6 +23,7 @@ class HUDPanel: NSPanel {
             self.setFrameOrigin(newOrigin)
         } else if event.type == .leftMouseUp {
             initialLocation = nil
+            self.saveFrame(usingName: "OverlayWindow")
         }
         super.sendEvent(event)
     }
@@ -51,6 +52,8 @@ class FloatingHUDWindowController: NSWindowController {
         let hostingView = NSHostingView(rootView: rootView)
         panel.contentView = hostingView
         
+        panel.setFrameAutosaveName("OverlayWindow")
+        
         super.init(window: panel)
     }
     
@@ -59,11 +62,14 @@ class FloatingHUDWindowController: NSWindowController {
     }
     
     func showHUD() {
-        window?.center()
-        if let screen = NSScreen.main {
-            let frame = window!.frame
-            let screenFrame = screen.visibleFrame
-            window?.setFrameOrigin(NSPoint(x: screenFrame.midX - frame.width / 2, y: screenFrame.maxY - frame.height - 50))
+        if let window = window {
+            if !window.setFrameUsingName("OverlayWindow") {
+                if let screen = NSScreen.main {
+                    let frame = window.frame
+                    let screenFrame = screen.visibleFrame
+                    window.setFrameOrigin(NSPoint(x: screenFrame.midX - frame.width / 2, y: screenFrame.maxY - frame.height - 50))
+                }
+            }
         }
         window?.orderFront(nil)
     }

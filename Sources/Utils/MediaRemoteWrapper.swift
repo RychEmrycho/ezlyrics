@@ -18,10 +18,18 @@ class MediaRemoteWrapper: @unchecked Sendable {
     var onTrackChanged: ((NowPlayingTrack?) -> Void)?
     
     private init() {
-        startHelper()
+        // Will be started explicitly based on settings
     }
     
-    private func startHelper() {
+    func stopHelper() {
+        process?.terminate()
+        process = nil
+        latestTrack = nil
+        onTrackChanged?(nil)
+    }
+    
+    func startHelper() {
+        guard process == nil else { return }
         let script = """
         import Foundation
 

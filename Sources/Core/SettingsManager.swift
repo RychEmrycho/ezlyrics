@@ -6,6 +6,7 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
     
     @AppStorage("fontSize") var fontSize: Double = 24
     @AppStorage("textColorHex") var textColorHex: String = "#FFFFFF"
+    @AppStorage("isAppEnabled") var isAppEnabled: Bool = true
     @AppStorage("showOverlay") var showOverlay: Bool = true
     @AppStorage("showBackground") var showBackground: Bool = true
     @AppStorage("backgroundColorHex") var backgroundColorHex: String = "#000000"

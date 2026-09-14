@@ -48,8 +48,9 @@ struct ManualOverrideView: View {
     
     var body: some View {
         VStack {
-            Text("Now Playing")
-                .font(.headline)
+            if settings.isAppEnabled {
+                Text("Now Playing")
+                    .font(.headline)
             if let track = syncEngine.currentTrack {
                 Text("\(track.artist) - \(track.title) (\(Int(track.duration))s)")
                     .font(.subheadline)
@@ -314,13 +315,19 @@ struct ManualOverrideView: View {
                 MenuItemRow(title: "Settings", iconName: "gearshape") {
                     openSettings()
                 }
-                MenuItemRow(title: "Quit", iconName: "power") {
-                    NSApplication.shared.terminate(nil)
-                }
+            } // end VStack
+            } // end if settings.isAppEnabled
+            
+            if settings.isAppEnabled {
+                Divider()
+            }
+            MenuToggleRow(title: "Enable ezlyrics", iconName: "power", isOn: $settings.isAppEnabled)
+            MenuItemRow(title: "Quit", iconName: "xmark.circle") {
+                NSApplication.shared.terminate(nil)
             }
         }
         .padding()
-        .frame(width: 400)
+        .frame(width: settings.isAppEnabled ? 400 : 250)
         .onAppear {
             scrollState.startMonitoring()
             
