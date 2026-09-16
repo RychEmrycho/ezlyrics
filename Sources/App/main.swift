@@ -16,7 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup Window
         let lyricsView = LyricsOverlayView(syncEngine: syncEngine)
         windowController = FloatingHUDWindowController(rootView: lyricsView)
-        if SettingsManager.shared.showOverlay {
+        if SettingsManager.shared.showOverlay && nowPlayingMonitor.currentTrack?.isPlaying == true {
             windowController.showHUD()
         }
         
@@ -31,7 +31,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 if SettingsManager.shared.isAppEnabled {
                     MediaRemoteWrapper.shared.startHelper()
                     if SettingsManager.shared.showOverlay && self.nowPlayingMonitor.currentTrack != nil {
-                        self.windowController.showHUD()
+                        if self.nowPlayingMonitor.currentTrack?.isPlaying == true {
+                            self.windowController.showHUD()
+                        } else {
+                            self.windowController.hideHUD()
+                        }
                     } else {
                         self.windowController.hideHUD()
                     }
@@ -57,7 +61,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.fetchLyrics(for: track)
                     if SettingsManager.shared.showOverlay && SettingsManager.shared.isAppEnabled {
                         self.hideHUDTask?.cancel()
-                        self.windowController.showHUD()
+                        if track.isPlaying {
+                            self.windowController.showHUD()
+                        } else {
+                            self.windowController.hideHUD()
+                        }
                     }
                 } else {
                     self.syncEngine.currentLyrics = nil
@@ -74,7 +82,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.hideHUDTask?.cancel()
                 if let lyrics = lyrics {
                     if SettingsManager.shared.showOverlay && SettingsManager.shared.isAppEnabled {
-                        self.windowController.showHUD()
+                        if self.nowPlayingMonitor.currentTrack?.isPlaying == true {
+                            self.windowController.showHUD()
+                        }
                         if !lyrics.isSynced {
                             self.hideHUDTask = Task {
                                 try? await Task.sleep(nanoseconds: 3_000_000_000)
