@@ -18,10 +18,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Swift
-      uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: "6.0"
+    - name: Show toolchain
+      run: |
+        xcodebuild -version
+        xcode-select -p
+        swift --version
+        swift package --version
     
     # We use our Makefile target which automatically installs swiftlint via Homebrew
     - name: Run Linter
