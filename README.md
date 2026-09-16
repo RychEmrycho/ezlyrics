@@ -24,14 +24,12 @@ A simple, floating lyrics widget for macOS. It detects what you're playing (Spot
 ## Installation
 
 ### Option 1: Download Release
-> [!NOTE]
-> Due to current issues with GitHub CI building macOS 15 specific features, the pre-built binaries on the Releases page may be outdated or unavailable. If you want the latest features, please use **Option 2: Build from Source**.
 
 Since this app uses a private macOS framework (`MediaRemote`) to read what's playing without requiring complex accessibility permissions, it isn't signed for the App Store.
 
-1. Download `ezlyrics.app.zip` from the [Releases](../../releases) page.
-2. Unzip and drag `ezlyrics.app` to your Applications folder.
-3. Because it's unsigned, you'll need to bypass Gatekeeper. Run this in Terminal:
+1. Download the latest `ezlyrics-vX.X.X.dmg` from the [Releases](../../releases) page.
+2. Double-click to mount the DMG, then drag `ezlyrics.app` to your Applications folder.
+3. Because it's unsigned, you'll need to bypass Gatekeeper. Open your Terminal and run:
    ```bash
    xattr -cr /Applications/ezlyrics.app
    ```
