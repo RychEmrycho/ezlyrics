@@ -10,6 +10,7 @@ help:
 	@echo "  make lint     - Run SwiftLint to check code style"
 	@echo "  make test     - Run Swift tests"
 	@echo "  make install  - Build release binary and install to ~/Applications"
+	@echo "  make package  - Build the release DMG for local testing"
 	@echo "  make clean    - Clean build artifacts"
 
 build:
@@ -41,6 +42,10 @@ test:
 install:
 	./install.sh
 
+package:
+	./package.sh local_test
+
 clean:
 	swift package clean
 	rm -rf ezlyrics.app
+	rm -f ezlyrics-*.dmg
