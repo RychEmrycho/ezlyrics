@@ -52,6 +52,15 @@ cat > "$INFO_PLIST" <<EOF
 EOF
 
 echo "🗜️ Creating Disk Image (DMG)..."
-hdiutil create -volname ezlyrics -srcfolder ezlyrics.app -ov -format UDZO "ezlyrics-v${VERSION}.dmg"
+DMG_STAGING="dmg_staging"
+rm -rf "$DMG_STAGING"
+mkdir -p "$DMG_STAGING"
+mv "$APP_DIR" "$DMG_STAGING/"
+ln -s /Applications "$DMG_STAGING/Applications"
+
+hdiutil create -volname ezlyrics -srcfolder "$DMG_STAGING" -ov -format UDZO "ezlyrics-v${VERSION}.dmg"
+
+# Clean up staging
+rm -rf "$DMG_STAGING"
 
 echo "✅ Packaged ezlyrics-v${VERSION}.dmg"
