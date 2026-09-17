@@ -1,4 +1,4 @@
-name: Publish
+name: Tag Pipeline (Build & Release)
 
 on:
   push:
