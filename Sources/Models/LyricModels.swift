@@ -19,13 +19,13 @@ struct ParsedLyrics: Equatable, Codable {
     let isSynced: Bool
     let lines: [LyricLine]
     var detectedLanguage: String? = nil
-    var sourceID: Int? = nil
-    var originalResponse: LRCLIBResponse? = nil
+    var sourceID: String? = nil
+    var originalResponse: LyricSearchResult? = nil
 }
 
 struct FetchResult {
     let lyrics: ParsedLyrics
-    let recommendedResponse: LRCLIBResponse?
+    let recommendedResponse: LyricSearchResult?
     let searchQuery: String
 }
 
@@ -36,14 +36,14 @@ struct RecommendationContext: Sendable {
 }
 
 protocol RecommendationRule: Sendable {
-    func score(for response: LRCLIBResponse, context: RecommendationContext) -> Int
+    func score(for response: LyricSearchResult, context: RecommendationContext) -> Int
 }
 
 struct SyncedLyricsRule: RecommendationRule {
-    func score(for response: LRCLIBResponse, context: RecommendationContext) -> Int {
-        if response.syncedLyrics != nil {
+    func score(for response: LyricSearchResult, context: RecommendationContext) -> Int {
+        if response.hasSyncedLyrics {
             return 100
-        } else if response.plainLyrics != nil {
+        } else if response.hasPlainLyrics {
             return 10
         }
         return 0
@@ -51,7 +51,7 @@ struct SyncedLyricsRule: RecommendationRule {
 }
 
 struct DurationRule: RecommendationRule {
-    func score(for response: LRCLIBResponse, context: RecommendationContext) -> Int {
+    func score(for response: LyricSearchResult, context: RecommendationContext) -> Int {
         guard context.duration > 0, let responseDuration = response.duration else {
             return 0
         }
@@ -62,7 +62,7 @@ struct DurationRule: RecommendationRule {
 }
 
 struct TitleMatchRule: RecommendationRule {
-    func score(for response: LRCLIBResponse, context: RecommendationContext) -> Int {
+    func score(for response: LyricSearchResult, context: RecommendationContext) -> Int {
         let expectedTitle = context.expectedTitle.lowercased()
         let responseTitle = response.trackName.lowercased()
         
@@ -76,7 +76,7 @@ struct TitleMatchRule: RecommendationRule {
 }
 
 struct ArtistMatchRule: RecommendationRule {
-    func score(for response: LRCLIBResponse, context: RecommendationContext) -> Int {
+    func score(for response: LyricSearchResult, context: RecommendationContext) -> Int {
         let expectedArtist = context.expectedArtist.lowercased()
         let responseArtist = response.artistName.lowercased()
         

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SearchResultRow: View {
-    let result: LRCLIBResponse
+    let result: LyricSearchResult
     let isApplied: Bool
     let action: () -> Void
     @State private var isHovered = false
@@ -15,14 +15,20 @@ struct SearchResultRow: View {
                         .foregroundColor(isApplied ? .accentColor : .primary)
                     HStack(spacing: 4) {
                         Text("Duration: \(Int(result.duration ?? 0))s •")
-                        if result.syncedLyrics != nil {
-                            Text("♫")
-                                .foregroundColor(.green)
+                        if result.hasSyncedLyrics {
                             Text("Synced")
-                        } else {
-                            Image(systemName: "text.alignleft")
-                                .foregroundColor(.yellow)
+                                .font(.caption2)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Color.blue.opacity(0.2))
+                                .cornerRadius(4)
+                        } else if result.hasPlainLyrics {
                             Text("Plain")
+                                .font(.caption2)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Color.yellow.opacity(0.2))
+                                .cornerRadius(4)
                         }
                     }
                     .font(.caption)

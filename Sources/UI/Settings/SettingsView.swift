@@ -5,6 +5,11 @@ struct SettingsView: View {
     
     var body: some View {
         TabView {
+            GeneralTab(settings: settings)
+                .tabItem {
+                    Label("General", systemImage: "gearshape")
+                }
+            
             AppearanceTab(settings: settings)
                 .tabItem {
                     Label("Appearance", systemImage: "paintpalette")

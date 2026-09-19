@@ -21,4 +21,5 @@ class UserPreferences: ObservableObject, @unchecked Sendable {
     @AppStorage("alignment") var alignment: String = "center"
     @AppStorage("lineLayout") var lineLayout: String = "two"
     @AppStorage("showTimestampsInMenu") var showTimestampsInMenu: Bool = false
+    @AppStorage("lyricProvider") var lyricProvider: String = "LRCLIB"
 }

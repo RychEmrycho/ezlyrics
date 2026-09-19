@@ -3,7 +3,7 @@ import NaturalLanguage
 
 struct LRCParser {
     
-    static func parse(plain: String?, synced: String?, trackName: String, artistName: String, sourceID: Int? = nil, originalResponse: LRCLIBResponse? = nil) -> ParsedLyrics {
+    static func parse(plain: String?, synced: String?, trackName: String, artistName: String, sourceID: String? = nil, originalResponse: LyricSearchResult? = nil) -> ParsedLyrics {
         var lines: [LyricLine] = []
         var isSynced = false
         

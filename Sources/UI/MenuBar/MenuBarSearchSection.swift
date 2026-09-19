@@ -5,7 +5,7 @@ struct MenuBarSearchSection: View {
     @ObservedObject var searchViewModel: SearchViewModel
     
     @State private var searchQuery = ""
-    @State private var searchResults: [LRCLIBResponse] = []
+    @State private var searchResults: [LyricSearchResult] = []
     @State private var isSearching = false
     @State private var isShowingSearchResults = false
     @State private var lastSeenSong = ""
@@ -113,7 +113,7 @@ struct MenuBarSearchSection: View {
         isSearching = true
         Task { @MainActor in
             do {
-                let results = try await LRCLIBClient.shared.searchLyrics(query: searchQuery)
+                let results = try await LyricsService.shared.searchLyrics(query: searchQuery)
                 self.searchResults = results
                 if !results.isEmpty && expandResults {
                     self.isShowingSearchResults = true
@@ -126,22 +126,28 @@ struct MenuBarSearchSection: View {
         }
     }
     
-    private func applyOverride(_ result: LRCLIBResponse) {
-        let parsed = LRCParser.parse(plain: result.plainLyrics, synced: result.syncedLyrics, trackName: result.trackName, artistName: result.artistName, sourceID: result.id)
-        
-        // Save to cache
-        if let track = syncEngine.currentTrack {
-            LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
-        } else {
-            syncEngine.currentTrack = NowPlayingTrack(
-                artist: result.artistName,
-                title: result.trackName,
-                duration: result.duration ?? 0,
-                elapsedTime: 0,
-                isPlaying: true,
-                lastUpdatedTime: Date().timeIntervalSinceReferenceDate
-            )
+    private func applyOverride(_ result: LyricSearchResult) {
+        Task { @MainActor in
+            do {
+                let parsed = try await LyricsService.shared.fetchLyrics(for: result)
+                
+                // Save to cache
+                if let track = syncEngine.currentTrack {
+                    LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
+                } else {
+                    syncEngine.currentTrack = NowPlayingTrack(
+                        artist: result.artistName,
+                        title: result.trackName,
+                        duration: result.duration ?? 0,
+                        elapsedTime: 0,
+                        isPlaying: true,
+                        lastUpdatedTime: Date().timeIntervalSinceReferenceDate
+                    )
+                }
+                syncEngine.currentLyrics = parsed
+            } catch {
+                print("Failed to fetch override lyrics: \(error)")
+            }
         }
-        syncEngine.currentLyrics = parsed
     }
 }
