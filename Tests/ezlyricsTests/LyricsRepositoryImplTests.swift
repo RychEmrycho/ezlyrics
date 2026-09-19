@@ -1,4 +1,5 @@
-import XCTest
+import Testing
+import Foundation
 @testable import ezlyrics
 
 final class MockLyricsCache: LyricsCacheProtocol, @unchecked Sendable {
@@ -43,21 +44,21 @@ final class LyricsRepoMockURLSession: URLSessionProtocol, @unchecked Sendable {
 }
 
 @MainActor
-final class LyricsRepositoryImplTests: XCTestCase {
+@Suite struct LyricsRepositoryImplTests {
     
     var session: LyricsRepoMockURLSession!
     var client: LRCLIBClient!
     var cache: MockLyricsCache!
     var repository: LyricsRepositoryImpl!
     
-    override func setUp() async throws {
+    init() async throws {
         session = LyricsRepoMockURLSession()
         client = LRCLIBClient(session: session)
         cache = MockLyricsCache()
         repository = LyricsRepositoryImpl(client: client, cache: cache)
     }
     
-    func testFetchBestLyrics_CacheHit() async {
+    @Test func FetchBestLyrics_CacheHit() async {
         let track = Track(artist: "Queen", title: "Bohemian Rhapsody", duration: 0, elapsedTime: 0, isPlaying: true, lastUpdatedTime: 0)
         let cachedLyrics = ParsedLyrics(trackName: "Bohemian Rhapsody", artistName: "Queen", isSynced: true, lines: [], detectedLanguage: nil)
         
@@ -65,11 +66,11 @@ final class LyricsRepositoryImplTests: XCTestCase {
         
         let result = await repository.fetchBestLyrics(for: track)
         
-        XCTAssertEqual(result.lyrics.artistName, "Queen")
-        XCTAssertEqual(result.recommendedResult?.syncedLyrics, "cached")
+        #expect(result.lyrics.artistName == "Queen")
+        #expect(result.recommendedResult?.syncedLyrics == "cached")
     }
     
-    func testFetchBestLyrics_ExactMatch() async throws {
+    @Test func FetchBestLyrics_ExactMatch() async throws {
         let track = Track(artist: "Queen", title: "Bohemian Rhapsody", duration: 355, elapsedTime: 0, isPlaying: true, lastUpdatedTime: 0)
         
         let json = """
@@ -93,13 +94,13 @@ final class LyricsRepositoryImplTests: XCTestCase {
         
         let result = await repository.fetchBestLyrics(for: track)
         
-        XCTAssertEqual(result.lyrics.artistName, "Queen")
-        XCTAssertTrue(result.lyrics.isSynced)
-        XCTAssertEqual(result.lyrics.lines.first?.text, "Is this the real life?")
-        XCTAssertTrue(cache.didCache)
+        #expect(result.lyrics.artistName == "Queen")
+        #expect(result.lyrics.isSynced)
+        #expect(result.lyrics.lines.first?.text == "Is this the real life?")
+        #expect(cache.didCache)
     }
     
-    func testFetchBestLyrics_FallbackToSearch() async throws {
+    @Test func FetchBestLyrics_FallbackToSearch() async throws {
         let track = Track(artist: "Queen", title: "Bohemian Rhapsody", duration: 355, elapsedTime: 0, isPlaying: true, lastUpdatedTime: 0)
         
         // Mock getLyrics failing with 404
@@ -131,12 +132,12 @@ final class LyricsRepositoryImplTests: XCTestCase {
         
         let result = await repository.fetchBestLyrics(for: track)
         
-        XCTAssertEqual(result.lyrics.artistName, "Queen")
-        XCTAssertTrue(result.lyrics.isSynced)
-        XCTAssertTrue(cache.didCache)
+        #expect(result.lyrics.artistName == "Queen")
+        #expect(result.lyrics.isSynced)
+        #expect(cache.didCache)
     }
     
-    func testFetchBestLyrics_SearchEmpty() async throws {
+    @Test func FetchBestLyrics_SearchEmpty() async throws {
         let track = Track(artist: "Unknown", title: "Unknown", duration: 355, elapsedTime: 0, isPlaying: true, lastUpdatedTime: 0)
         
         let notFoundResponse = HTTPURLResponse(url: URL(string: "https://lrclib.net/api")!, statusCode: 404, httpVersion: nil, headerFields: nil)!
@@ -149,8 +150,8 @@ final class LyricsRepositoryImplTests: XCTestCase {
         
         let result = await repository.fetchBestLyrics(for: track)
         
-        XCTAssertEqual(result.lyrics.artistName, "Unknown")
-        XCTAssertFalse(result.lyrics.isSynced)
-        XCTAssertTrue(result.lyrics.lines.isEmpty)
+        #expect(result.lyrics.artistName == "Unknown")
+        #expect(!(result.lyrics.isSynced))
+        #expect(result.lyrics.lines.isEmpty)
     }
 }

@@ -41,7 +41,7 @@ test:
 	swift test
 
 test-coverage:
-	swift test --enable-code-coverage
+	swift test --enable-code-coverage --xunit-output junit.xml
 	xcrun llvm-cov report \
 		-instr-profile=$$(swift build --show-bin-path)/codecov/default.profdata \
 		$$(swift build --show-bin-path)/ezlyricsPackageTests.xctest/Contents/MacOS/ezlyricsPackageTests \

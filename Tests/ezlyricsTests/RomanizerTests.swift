@@ -1,4 +1,4 @@
-import XCTest
+import Testing
 @testable import ezlyrics
 
 final class MockStringTransliterator: StringTransliterator {
@@ -14,35 +14,34 @@ final class MockStringTransliterator: StringTransliterator {
     }
 }
 
-final class RomanizerTests: XCTestCase {
+@Suite struct RomanizerTests {
     
-    var mockTransliterator: MockStringTransliterator!
-    var sut: Romanizer!
+    var mockTransliterator: MockStringTransliterator
+    var sut: Romanizer
     
-    override func setUp() {
-        super.setUp()
+    init() {
         mockTransliterator = MockStringTransliterator()
         sut = Romanizer(transliterator: mockTransliterator)
     }
     
-    func testNoChangeForLatin() {
+    @Test func noChangeForLatin() {
         mockTransliterator.toLatinHandler = { _ in "Hello World" }
         mockTransliterator.stripCombiningMarksHandler = { _ in "Hello World" }
         
-        XCTAssertNil(sut.romanize("Hello World"))
+        #expect(sut.romanize("Hello World") == nil)
     }
     
-    func testRomanizeJapanese() {
+    @Test func romanizeJapanese() {
         mockTransliterator.toLatinHandler = { _ in "arigatou" }
         mockTransliterator.stripCombiningMarksHandler = { _ in "arigatou" }
         
-        XCTAssertEqual(sut.romanize("ありがとう"), "arigatou")
+        #expect(sut.romanize("ありがとう") == "arigatou")
     }
     
-    func testDiacriticsAreStripped() {
+    @Test func diacriticsAreStripped() {
         mockTransliterator.toLatinHandler = { _ in "nǐ hǎo" }
         mockTransliterator.stripCombiningMarksHandler = { _ in "ni hao" }
         
-        XCTAssertEqual(sut.romanize("你好"), "ni hao")
+        #expect(sut.romanize("你好") == "ni hao")
     }
 }

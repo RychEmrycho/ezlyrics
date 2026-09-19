@@ -1,9 +1,9 @@
-import XCTest
+import Testing
 @testable import ezlyrics
 
-final class LRCLIBResponseSearchResultTests: XCTestCase {
+@Suite struct LRCLIBResponseSearchResultTests {
     
-    func testMapToSearchResult() {
+    @Test func MapToSearchResult() {
         let response = LRCLIBResponse(
             id: 123,
             trackName: "Test Track",
@@ -17,13 +17,13 @@ final class LRCLIBResponseSearchResultTests: XCTestCase {
         
         let result = response.toSearchResult()
         
-        XCTAssertEqual(result.id, 123)
-        XCTAssertEqual(result.trackName, "Test Track")
-        XCTAssertEqual(result.artistName, "Test Artist")
-        XCTAssertEqual(result.albumName, "Test Album")
-        XCTAssertEqual(result.duration, 210.5)
-        XCTAssertEqual(result.instrumental, false)
-        XCTAssertEqual(result.plainLyrics, "Plain Text")
-        XCTAssertEqual(result.syncedLyrics, "[00:10.00]Synced Text")
+        #expect(result.id == 123)
+        #expect(result.trackName == "Test Track")
+        #expect(result.artistName == "Test Artist")
+        #expect(result.albumName == "Test Album")
+        #expect(result.duration == 210.5)
+        #expect(result.instrumental == false)
+        #expect(result.plainLyrics == "Plain Text")
+        #expect(result.syncedLyrics == "[00:10.00]Synced Text")
     }
 }

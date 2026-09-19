@@ -1,15 +1,15 @@
-import XCTest
+import Testing
 @testable import ezlyrics
 
-final class TrackMetadataParserTests: XCTestCase {
+@Suite struct TrackMetadataParserTests {
     
-    func testNormalParsing() {
+    @Test func NormalParsing() {
         let (artist, title) = TrackMetadataParser.parse(rawArtist: "Queen", rawTitle: "Bohemian Rhapsody")
-        XCTAssertEqual(artist, "Queen")
-        XCTAssertEqual(title, "Bohemian Rhapsody")
+        #expect(artist == "Queen")
+        #expect(title == "Bohemian Rhapsody")
     }
     
-    func testJunkRemoval() {
+    @Test func JunkRemoval() {
         let cases = [
             ("Song Title (Official Music Video)", "Song Title"),
             ("Song Title [Lyrics]", "Song Title"),
@@ -21,23 +21,23 @@ final class TrackMetadataParserTests: XCTestCase {
         
         for (raw, expected) in cases {
             let (_, title) = TrackMetadataParser.parse(rawArtist: "Artist", rawTitle: raw)
-            XCTAssertEqual(title, expected, "Failed to clean: \(raw)")
+            #expect(title == expected, "Failed to clean: \(raw)")
         }
     }
     
-    func testJapaneseYouTubeFormat() {
+    @Test func JapaneseYouTubeFormat() {
         let rawTitle = "KANA-BOON 『ないものねだり』Music Video"
         let (artist, title) = TrackMetadataParser.parse(rawArtist: "KANA-BOONVEVO", rawTitle: rawTitle)
         
-        XCTAssertEqual(artist, "KANA-BOON")
-        XCTAssertEqual(title, "ないものねだり")
+        #expect(artist == "KANA-BOON")
+        #expect(title == "ないものねだり")
     }
     
-    func testJapaneseYouTubeFormatWithNoArtist() {
+    @Test func JapaneseYouTubeFormatWithNoArtist() {
         let rawTitle = "『ないものねだり』"
         let (artist, title) = TrackMetadataParser.parse(rawArtist: "Channel Name", rawTitle: rawTitle)
         
-        XCTAssertEqual(artist, "Channel Name")
-        XCTAssertEqual(title, "ないものねだり")
+        #expect(artist == "Channel Name")
+        #expect(title == "ないものねだり")
     }
 }

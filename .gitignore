@@ -12,3 +12,6 @@ DerivedData/
 *.dmg
 
 lcov.info
+
+junit.xml
+junit-swift-testing.xml
