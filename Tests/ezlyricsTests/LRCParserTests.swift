@@ -4,7 +4,7 @@ import XCTest
 final class LRCParserTests: XCTestCase {
     func testParsePlainLyrics() {
         let plain = "Line 1\nLine 2"
-        let result = LRCParser.parse(plain: plain, synced: nil, trackName: "Test", artistName: "Artist")
+        let result = LyricsParser.parse(plain: plain, synced: nil, trackName: "Test", artistName: "Artist")
         
         XCTAssertFalse(result.isSynced)
         XCTAssertEqual(result.lines.count, 2)
@@ -14,7 +14,7 @@ final class LRCParserTests: XCTestCase {
 
     func testParseSyncedLyrics() {
         let synced = "[00:12.34]Line 1\n[00:15.67]Line 2"
-        let result = LRCParser.parse(plain: nil, synced: synced, trackName: "Test", artistName: "Artist")
+        let result = LyricsParser.parse(plain: nil, synced: synced, trackName: "Test", artistName: "Artist")
         
         XCTAssertTrue(result.isSynced)
         XCTAssertEqual(result.lines.count, 2)
@@ -30,7 +30,7 @@ final class LRCParserTests: XCTestCase {
     
     func testParseSyncedLyricsWithSyllables() {
         let synced = "[00:10.00] <00:10.00>word1 <00:10.50>word2"
-        let result = LRCParser.parse(plain: nil, synced: synced, trackName: "Test", artistName: "Artist")
+        let result = LyricsParser.parse(plain: nil, synced: synced, trackName: "Test", artistName: "Artist")
         
         XCTAssertTrue(result.isSynced)
         XCTAssertEqual(result.lines.count, 1)

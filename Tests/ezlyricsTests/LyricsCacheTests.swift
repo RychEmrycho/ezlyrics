@@ -19,21 +19,22 @@ final class LyricsCacheTests: XCTestCase {
         super.tearDown()
     }
 
-    func testCacheHitAndMiss() {
+    func testCacheHitAndMiss() async {
         let artist = "TestArtist"
         let title = "TestTitle"
         
         let parsed = ParsedLyrics(trackName: title, artistName: artist, isSynced: true, lines: [])
-        sut.cache(lyrics: parsed, artist: artist, title: title)
+        await sut.cache(lyrics: parsed, artist: artist, title: title)
         
         // Assert hit
-        let retrieved = sut.getCachedLyrics(artist: artist, title: title)
+        let retrieved = await sut.getCachedLyrics(artist: artist, title: title)
         XCTAssertNotNil(retrieved)
+        // Assert hit
         XCTAssertEqual(retrieved?.artistName, artist)
         XCTAssertEqual(retrieved?.trackName, title)
         
         // Assert miss
-        let missed = sut.getCachedLyrics(artist: "Unknown", title: "Unknown")
+        let missed = await sut.getCachedLyrics(artist: "Unknown", title: "Unknown")
         XCTAssertNil(missed)
     }
 }
