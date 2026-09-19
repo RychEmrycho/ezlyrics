@@ -3,7 +3,7 @@ import NaturalLanguage
 
 class LRCParser {
     
-    static func parse(plain: String?, synced: String?, trackName: String, artistName: String, sourceID: Int? = nil) -> ParsedLyrics {
+    static func parse(plain: String?, synced: String?, trackName: String, artistName: String, sourceID: Int? = nil, originalResponse: LRCLIBResponse? = nil) -> ParsedLyrics {
         var lines: [LyricLine] = []
         var isSynced = false
         
@@ -25,7 +25,7 @@ class LRCParser {
             detectedLanguage = recognizer.dominantLanguage?.rawValue
         }
         
-        return ParsedLyrics(trackName: trackName, artistName: artistName, isSynced: isSynced, lines: lines, detectedLanguage: detectedLanguage, sourceID: sourceID)
+        return ParsedLyrics(trackName: trackName, artistName: artistName, isSynced: isSynced, lines: lines, detectedLanguage: detectedLanguage, sourceID: sourceID, originalResponse: originalResponse)
     }
     
     private static func parseSynced(lrc: String) -> [LyricLine] {

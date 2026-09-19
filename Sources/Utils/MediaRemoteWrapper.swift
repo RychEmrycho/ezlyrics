@@ -30,54 +30,14 @@ class MediaRemoteWrapper: @unchecked Sendable {
     
     func startHelper() {
         guard process == nil else { return }
-        let script = """
-        import Foundation
-
-        let bundle = CFBundleCreate(kCFAllocatorDefault, NSURL(fileURLWithPath: "/System/Library/PrivateFrameworks/MediaRemote.framework"))
-        guard let bundle = bundle else { exit(1) }
-        let pointer = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteGetNowPlayingInfo" as CFString)
-        typealias InfoFunc = @convention(c) (DispatchQueue, @escaping @convention(block) ([String: Any]) -> Void) -> Void
-        let getInfo = unsafeBitCast(pointer, to: InfoFunc.self)
-
-        var lastRawElapsedTime: Double = -1
-        var isDynamic = false
-
-        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-            getInfo(DispatchQueue.main) { info in
-                let artist = (info["kMRMediaRemoteNowPlayingInfoArtist"] as? String) ?? ""
-                let title = (info["kMRMediaRemoteNowPlayingInfoTitle"] as? String) ?? ""
-                let duration = (info["kMRMediaRemoteNowPlayingInfoDuration"] as? NSNumber)?.doubleValue ?? 0
-                let rawElapsedTime = (info["kMRMediaRemoteNowPlayingInfoElapsedTime"] as? NSNumber)?.doubleValue ?? 0
-                let rate = (info["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? NSNumber)?.doubleValue ?? 0
-                let timestampDate = info["kMRMediaRemoteNowPlayingInfoTimestamp"] as? Date
-                
-                if lastRawElapsedTime != -1 {
-                    if rawElapsedTime != lastRawElapsedTime {
-                        isDynamic = true
-                    } else if rate > 0 {
-                        isDynamic = false
-                    }
-                }
-                lastRawElapsedTime = rawElapsedTime
-                
-                var trueElapsedTime = rawElapsedTime
-                if !isDynamic, let tDate = timestampDate, rate > 0 {
-                    trueElapsedTime += Date().timeIntervalSince(tDate)
-                }
-                
-                print("\\(artist)||\\(title)||\\(duration)||\\(trueElapsedTime)||\\(rate)")
-                fflush(stdout)
-            }
+        guard let scriptURL = Bundle.module.url(forResource: "MediaRemoteHelper", withExtension: "swift", subdirectory: "Scripts") else {
+            print("Failed to find MediaRemoteHelper.swift in bundle.")
+            return
         }
-        RunLoop.main.run()
-        """
-        
-        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ezlyrics_mr_helper.swift")
-        try? script.write(to: url, atomically: true, encoding: .utf8)
         
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/swift")
-        process.arguments = [url.path]
+        process.arguments = [scriptURL.path]
         
         let pipe = Pipe()
         process.standardOutput = pipe

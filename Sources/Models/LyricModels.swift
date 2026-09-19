@@ -20,4 +20,5 @@ struct ParsedLyrics: Equatable, Codable {
     let lines: [LyricLine]
     var detectedLanguage: String? = nil
     var sourceID: Int? = nil
+    var originalResponse: LRCLIBResponse? = nil
 }
