@@ -10,3 +10,5 @@ DerivedData/
 *.zip
 .notes/
 *.dmg
+
+lcov.info

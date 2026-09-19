@@ -201,7 +201,7 @@ private struct MenuBarLyricLineRow: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            if settings.enableRomanization && settings.romanizationDisplayMode != "overlayOnly", let romanized = Romanizer.romanize(line.text) {
+            if settings.enableRomanization && settings.romanizationDisplayMode != "overlayOnly", let romanized = Romanizer().romanize(line.text) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     if lyrics.isSynced {
                         Image(systemName: "waveform")

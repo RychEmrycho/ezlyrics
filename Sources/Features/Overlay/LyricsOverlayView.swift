@@ -50,8 +50,8 @@ struct LyricsOverlayView: View {
                 TimelineView(.animation) { _ in
                     let effectiveTime = playbackVM.currentPlaybackTime()
                     
-                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer.romanize(active.text) != nil
-                    let mainText = isRomanized ? Romanizer.romanize(active.text)! : active.text
+                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(active.text) != nil
+                    let mainText = isRomanized ? Romanizer().romanize(active.text)! : active.text
                     let subText = isRomanized ? active.text : nil
                     
                     HStack(alignment: .center, spacing: 6) {
@@ -105,8 +105,8 @@ struct LyricsOverlayView: View {
             
             if settings.lineLayout == "two" || settings.lineLayout == "three" {
                 if let next = playbackVM.nextLine {
-                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer.romanize(next.text) != nil
-                    let textToShow = isRomanized ? Romanizer.romanize(next.text)! : next.text
+                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(next.text) != nil
+                    let textToShow = isRomanized ? Romanizer().romanize(next.text)! : next.text
                     
                     HStack(alignment: .center, spacing: 6) {
                         if isRomanized {
@@ -127,8 +127,8 @@ struct LyricsOverlayView: View {
             
             if settings.lineLayout == "three" {
                 if let nextNext = playbackVM.nextNextLine {
-                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer.romanize(nextNext.text) != nil
-                    let textToShow = isRomanized ? Romanizer.romanize(nextNext.text)! : nextNext.text
+                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(nextNext.text) != nil
+                    let textToShow = isRomanized ? Romanizer().romanize(nextNext.text)! : nextNext.text
                     
                     HStack(alignment: .center, spacing: 6) {
                         if isRomanized {
