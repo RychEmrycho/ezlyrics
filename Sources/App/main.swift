@@ -8,6 +8,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var windowController: FloatingHUDWindowController!
     var menuBarController: MenuBarController!
     let syncEngine = SyncEngine()
+    let searchViewModel = SearchViewModel()
     let nowPlayingMonitor = NowPlayingMonitor()
     var cancellables = Set<AnyCancellable>()
     var hideHUDTask: Task<Void, Never>?
@@ -50,7 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Setup Menu Bar
         menuBarController = MenuBarController()
-        menuBarController.setup(syncEngine: syncEngine)
+        menuBarController.setup(syncEngine: syncEngine, searchViewModel: searchViewModel)
         
         // Bind Monitor to SyncEngine
         nowPlayingMonitor.$currentTrack
@@ -100,70 +101,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func fetchLyrics(for track: NowPlayingTrack) {
-        // Check cache first
-        if let cached = LyricsCache.shared.getCachedLyrics(artist: track.artist, title: track.title) {
-            syncEngine.currentLyrics = cached
-            syncEngine.lastAutoSearchQuery = "\(track.artist) \(track.title)"
-            syncEngine.autoSearchTrigger = UUID()
-            return
-        }
-        
-        // Otherwise fetch
         Task { [weak self] in
             guard let self = self else { return }
-            do {
-                let response = try await LRCLIBClient.shared.getLyrics(artist: track.artist, title: track.title, duration: track.duration)
-                let parsed = LRCParser.parse(plain: response.plainLyrics, synced: response.syncedLyrics, trackName: response.trackName, artistName: response.artistName, sourceID: response.id)
-                LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
-                self.syncEngine.currentLyrics = parsed
-                self.syncEngine.suggestedResponse = response.syncedLyrics != nil ? response : nil
-                self.syncEngine.lastAutoSearchQuery = "\(track.artist) \(track.title)"
-                self.syncEngine.autoSearchTrigger = UUID()
-            } catch {
-                do {
-                    let results = try await LRCLIBClient.shared.searchLyrics(query: track.title)
-                    
-                    var bestSuggested: LRCLIBResponse? = nil
-                    let syncedResults = results.filter { $0.syncedLyrics != nil }
-                    
-                    if track.duration > 0 && !syncedResults.isEmpty {
-                        bestSuggested = syncedResults.min(by: { 
-                            let d1 = $0.duration ?? 0
-                            let d2 = $1.duration ?? 0
-                            return abs(d1 - track.duration) < abs(d2 - track.duration)
-                        })
-                        // Must be within 10 seconds to be considered a "close duration" suggestion
-                        if let bs = bestSuggested, let d = bs.duration, abs(d - track.duration) > 10.0 {
-                            bestSuggested = nil
-                        }
-                    } else if !syncedResults.isEmpty {
-                        bestSuggested = syncedResults.first
-                    }
-                    
-                    let fallbackMatch = results.first(where: { $0.syncedLyrics != nil || $0.plainLyrics != nil })
-                    
-                    if let bestMatch = bestSuggested ?? fallbackMatch {
-                        let parsed = LRCParser.parse(plain: bestMatch.plainLyrics, synced: bestMatch.syncedLyrics, trackName: bestMatch.trackName, artistName: bestMatch.artistName, sourceID: bestMatch.id)
-                        LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
-                        self.syncEngine.currentLyrics = parsed
-                        self.syncEngine.suggestedResponse = bestMatch.syncedLyrics != nil ? bestMatch : nil
-                        self.syncEngine.lastAutoSearchQuery = track.title
-                        self.syncEngine.autoSearchTrigger = UUID()
-                    } else {
-                        print("Failed to fetch lyrics: No lyrics found in search results.")
-                        self.syncEngine.currentLyrics = ParsedLyrics(trackName: track.title, artistName: track.artist, isSynced: false, lines: [], detectedLanguage: nil)
-                        self.syncEngine.suggestedResponse = nil
-                        self.syncEngine.lastAutoSearchQuery = "\(track.artist) \(track.title)"
-                        self.syncEngine.autoSearchTrigger = UUID()
-                    }
-                } catch {
-                    print("Failed to fetch lyrics via search: \(error)")
-                    self.syncEngine.currentLyrics = ParsedLyrics(trackName: track.title, artistName: track.artist, isSynced: false, lines: [], detectedLanguage: nil)
-                    self.syncEngine.suggestedResponse = nil
-                    self.syncEngine.lastAutoSearchQuery = "\(track.artist) \(track.title)"
-                    self.syncEngine.autoSearchTrigger = UUID()
-                }
-            }
+            let result = await LyricsService.shared.fetchBestLyrics(for: track)
+            
+            self.syncEngine.currentLyrics = result.lyrics
+            self.searchViewModel.suggestedResponse = result.suggestedResponse
+            self.searchViewModel.lastAutoSearchQuery = result.searchQuery
+            self.searchViewModel.autoSearchTrigger = UUID()
         }
     }
 }

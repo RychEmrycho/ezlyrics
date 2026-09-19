@@ -13,6 +13,9 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
             name: "ezlyrics",
+            path: "Sources",
+            exclude: ["Scripts"],
+            resources: [.copy("Scripts")],
             linkerSettings: [
                 .unsafeFlags(["-F/System/Library/PrivateFrameworks", "-framework", "MediaRemote"])
             ]

@@ -45,6 +45,12 @@ if [ -f "AppIcon.icns" ]; then
     cp AppIcon.icns "$APP_DIR/Contents/Resources/AppIcon.icns"
 fi
 
+# Copy SPM Resource Bundle
+BUNDLE_PATH=".build/release/ezlyrics_ezlyrics.bundle"
+if [ -d "$BUNDLE_PATH" ]; then
+    cp -R "$BUNDLE_PATH" "$APP_DIR/Contents/Resources/"
+fi
+
 # Create basic Info.plist
 cat > "$INFO_PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
