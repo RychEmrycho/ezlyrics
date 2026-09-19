@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import ezlyrics
 
 @MainActor
-final class SyncEngineTests: XCTestCase {
+@Suite struct PlaybackViewModelSyncTests {
     
     private func makePlaybackVM() -> PlaybackViewModel {
         let client = LRCLIBClient()
@@ -12,7 +13,7 @@ final class SyncEngineTests: XCTestCase {
     }
     
     @MainActor
-    func testUnsyncedLyrics() {
+    @Test func UnsyncedLyrics() {
         let sut = makePlaybackVM()
         let parsed = ParsedLyrics(trackName: "Test", artistName: "Artist", isSynced: false, lines: [LyricLine(timestamp: 0, text: "Line", syllables: nil)])
         sut.currentLyrics = parsed
@@ -20,12 +21,12 @@ final class SyncEngineTests: XCTestCase {
         let track = Track(artist: "Artist", title: "Test", duration: 100, elapsedTime: 10, isPlaying: true, lastUpdatedTime: Date().timeIntervalSinceReferenceDate)
         sut.currentTrack = track
         
-        XCTAssertEqual(sut.activeLine?.text, "Lyrics are not synced")
-        XCTAssertNil(sut.nextLine)
+        #expect(sut.activeLine?.text == "Lyrics are not synced")
+        #expect(sut.nextLine == nil)
     }
     
     @MainActor
-    func testSyncedLyricsProgression() {
+    @Test func SyncedLyricsProgression() {
         let sut = makePlaybackVM()
         let lines = [
             LyricLine(timestamp: 10.0, text: "Line 1", syllables: nil),
@@ -39,19 +40,19 @@ final class SyncEngineTests: XCTestCase {
         var track = Track(artist: "Artist", title: "Test", duration: 100, elapsedTime: 5, isPlaying: false, lastUpdatedTime: Date().timeIntervalSinceReferenceDate)
         sut.currentTrack = track
         
-        XCTAssertNil(sut.activeLine)
-        XCTAssertEqual(sut.nextLine?.text, "Line 1")
+        #expect(sut.activeLine == nil)
+        #expect(sut.nextLine?.text == "Line 1")
         
         // At 12 seconds (during first line)
         track = Track(artist: "Artist", title: "Test", duration: 100, elapsedTime: 12, isPlaying: false, lastUpdatedTime: Date().timeIntervalSinceReferenceDate)
         sut.currentTrack = track
         
-        XCTAssertEqual(sut.activeLine?.text, "Line 1")
-        XCTAssertEqual(sut.nextLine?.text, "Line 2")
+        #expect(sut.activeLine?.text == "Line 1")
+        #expect(sut.nextLine?.text == "Line 2")
     }
     
     @MainActor
-    func testSmartSilenceDetection() {
+    @Test func SmartSilenceDetection() {
         let sut = makePlaybackVM()
         let lines = [
             LyricLine(timestamp: 10.0, text: "Line 1", syllables: nil),
@@ -64,12 +65,12 @@ final class SyncEngineTests: XCTestCase {
         var track = Track(artist: "Artist", title: "Test", duration: 100, elapsedTime: 12, isPlaying: false, lastUpdatedTime: Date().timeIntervalSinceReferenceDate)
         sut.currentTrack = track
         
-        XCTAssertEqual(sut.activeLine?.text, "Line 1")
+        #expect(sut.activeLine?.text == "Line 1")
         
         // At 20 seconds (time elapsed > 5s and time to next > 2s)
         track = Track(artist: "Artist", title: "Test", duration: 100, elapsedTime: 20, isPlaying: false, lastUpdatedTime: Date().timeIntervalSinceReferenceDate)
         sut.currentTrack = track
         
-        XCTAssertEqual(sut.activeLine?.text, "•••")
+        #expect(sut.activeLine?.text == "•••")
     }
 }

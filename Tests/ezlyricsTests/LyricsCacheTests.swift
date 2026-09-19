@@ -1,25 +1,24 @@
-import XCTest
+import Testing
+import Foundation
 @testable import ezlyrics
 
-final class LyricsCacheTests: XCTestCase {
+@Suite final class LyricsCacheTests {
     var sut: LyricsCache!
     var tempDirectory: URL!
 
-    override func setUp() {
-        super.setUp()
+    init() {
         // Create a unique temporary directory for this test
         tempDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         sut = LyricsCache(cacheDirectory: tempDirectory)
     }
 
-    override func tearDown() {
+    deinit {
         // Clean up the disk after the test finishes
         try? FileManager.default.removeItem(at: tempDirectory)
         sut = nil
-        super.tearDown()
     }
 
-    func testCacheHitAndMiss() async {
+    @Test func CacheHitAndMiss() async {
         let artist = "TestArtist"
         let title = "TestTitle"
         
@@ -28,13 +27,13 @@ final class LyricsCacheTests: XCTestCase {
         
         // Assert hit
         let retrieved = await sut.getCachedLyrics(artist: artist, title: title)
-        XCTAssertNotNil(retrieved)
+        #expect(retrieved != nil)
         // Assert hit
-        XCTAssertEqual(retrieved?.artistName, artist)
-        XCTAssertEqual(retrieved?.trackName, title)
+        #expect(retrieved?.artistName == artist)
+        #expect(retrieved?.trackName == title)
         
         // Assert miss
         let missed = await sut.getCachedLyrics(artist: "Unknown", title: "Unknown")
-        XCTAssertNil(missed)
+        #expect(missed == nil)
     }
 }
