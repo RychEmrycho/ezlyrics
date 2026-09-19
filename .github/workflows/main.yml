@@ -39,6 +39,9 @@ jobs:
     - name: Run Tests & Calculate Coverage
       run: make test-coverage
 
+    - name: Install lcov
+      run: brew install lcov
+
     - name: Report Code Coverage
       if: github.event_name == 'pull_request'
       uses: zgosalvez/github-actions-report-lcov@v4
