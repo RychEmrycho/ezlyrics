@@ -19,7 +19,7 @@ class MenuBarController: NSObject {
         popover = NSPopover()
         popover.behavior = .transient
         
-        let view = ManualOverrideView(syncEngine: syncEngine, searchViewModel: searchViewModel)
+        let view = MenuBarView(syncEngine: syncEngine, searchViewModel: searchViewModel)
         popover.contentViewController = NSHostingController(rootView: view)
     }
     
