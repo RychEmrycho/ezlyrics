@@ -9,6 +9,7 @@ help:
 	@echo "  make run      - Run the project locally"
 	@echo "  make lint     - Run SwiftLint to check code style"
 	@echo "  make test     - Run Swift tests"
+	@echo "  make test-coverage - Run tests with code coverage report"
 	@echo "  make install  - Build release binary and install to ~/Applications"
 	@echo "  make package  - Build the release DMG for local testing"
 	@echo "  make clean    - Clean build artifacts"
@@ -38,6 +39,17 @@ lint: setup
 
 test:
 	swift test
+
+test-coverage:
+	swift test --enable-code-coverage
+	xcrun llvm-cov report \
+		-instr-profile=$$(swift build --show-bin-path)/codecov/default.profdata \
+		$$(swift build --show-bin-path)/ezlyricsPackageTests.xctest/Contents/MacOS/ezlyricsPackageTests \
+		-ignore-filename-regex="\.build|Tests"
+	xcrun llvm-cov export -format="lcov" \
+		-instr-profile=$$(swift build --show-bin-path)/codecov/default.profdata \
+		$$(swift build --show-bin-path)/ezlyricsPackageTests.xctest/Contents/MacOS/ezlyricsPackageTests \
+		-ignore-filename-regex="\.build|Tests" > lcov.info
 
 install:
 	./install.sh

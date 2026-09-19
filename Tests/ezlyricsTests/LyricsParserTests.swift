@@ -1,7 +1,7 @@
 import XCTest
 @testable import ezlyrics
 
-final class LRCParserTests: XCTestCase {
+final class LyricsParserTests: XCTestCase {
     func testParsePlainLyrics() {
         let plain = "Line 1\nLine 2"
         let result = LyricsParser.parse(plain: plain, synced: nil, trackName: "Test", artistName: "Artist")

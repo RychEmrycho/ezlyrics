@@ -40,7 +40,7 @@ struct TrackMetadataParser {
         }
         
         // Strip junk tags that ruin lyrics searches like (Lyrics), [Official Music Video], etc.
-        let cleanTitle = title.replacingOccurrences(of: "(?i)\\s*\\(.*?official.*?\\)|\\s*\\[.*?official.*?\\]|\\s*\\(.*?lyrics.*?\\)|\\s*\\[.*?lyrics.*?\\]", with: "", options: .regularExpression)
+        let cleanTitle = title.replacingOccurrences(of: "(?i)\\s*\\(.*?official.*?\\)|\\s*\\[.*?official.*?\\]|\\s*\\(.*?lyric.*?\\)|\\s*\\[.*?lyric.*?\\]|\\s*\\(.*?visualizer.*?\\)|\\s*\\[.*?visualizer.*?\\]|\\s*\\(.*?video.*?\\)|\\s*\\[.*?video.*?\\]", with: "", options: .regularExpression)
         title = cleanTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         
         return (artist: artist, title: title)

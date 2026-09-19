@@ -2,7 +2,7 @@ import XCTest
 @testable import ezlyrics
 
 @MainActor
-final class SyncEngineTests: XCTestCase {
+final class PlaybackViewModelSyncTests: XCTestCase {
     
     private func makePlaybackVM() -> PlaybackViewModel {
         let client = LRCLIBClient()

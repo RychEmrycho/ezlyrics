@@ -13,6 +13,9 @@ jobs:
   build-and-test:
     name: Build & Lint
     runs-on: macos-15
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -32,9 +35,26 @@ jobs:
     - name: Build Application
       run: make build
 
-    # Currently we don't have unit tests, but this ensures that if you add them later, they run automatically!
-    - name: Run Tests
-      run: make test
+    # Run unit tests and calculate test coverage using llvm-cov
+    - name: Run Tests & Calculate Coverage
+      run: make test-coverage
+
+    - name: Report Code Coverage
+      if: github.event_name == 'pull_request'
+      uses: zgosalvez/github-actions-report-lcov@v4
+      with:
+        coverage-files: lcov.info
+        minimum-coverage: 0
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        update-comment: true
+
+    - name: Code Coverage Annotations
+      if: github.event_name == 'pull_request'
+      uses: ggilder/codecoverage@v1
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERAGE_FILE_PATH: "lcov.info"
+        COVERAGE_FORMAT: "lcov"
 
   release:
     name: Release
