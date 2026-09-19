@@ -45,6 +45,7 @@ struct ManualOverrideView: View {
     @State private var plainScrollSpeedLevel: Int = 0
     @State private var currentPlainLineIndex: Int = 0
     @State private var autoScrollTask: Task<Void, Never>?
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack {
@@ -63,6 +64,21 @@ struct ManualOverrideView: View {
             
             Divider()
             
+            if let suggested = syncEngine.suggestedResponse {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Suggested Lyric")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    SearchResultRow(result: suggested, isApplied: syncEngine.currentLyrics?.sourceID == suggested.id) {
+                        applyOverride(suggested)
+                    }
+                }
+                .padding(.vertical, 4)
+                
+                Divider()
+            }
+            
             HStack {
                 TextField("Search LRCLIB...", text: $searchQuery)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -80,19 +96,25 @@ struct ManualOverrideView: View {
                     .padding()
             }
             
-            if !searchResults.isEmpty {
+            if !searchResults.isEmpty || syncEngine.suggestedResponse != nil {
                 DisclosureGroup(isExpanded: $isShowingSearchResults) {
                     ScrollView {
-                        LazyVStack(alignment: .leading) {
-                            ForEach(searchResults, id: \.id) { result in
-                                SearchResultRow(result: result) {
-                                    applyOverride(result)
+                        LazyVStack(alignment: .leading, spacing: 12) {
+                            if !searchResults.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    ForEach(searchResults, id: \.id) { result in
+                                        SearchResultRow(result: result, isApplied: syncEngine.currentLyrics?.sourceID == result.id) {
+                                            applyOverride(result)
+                                        }
+                                    }
                                 }
                             }
                         }
                         .padding(.horizontal, 4)
+                        .padding(.vertical, 4)
                     }
-                    .frame(minHeight: 150, maxHeight: 200)
+                    .frame(maxHeight: 200)
+                    .clipped()
                 } label: {
                     Text("Search Results")
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -191,7 +213,7 @@ struct ManualOverrideView: View {
                                                 if lyrics.isSynced {
                                                     Image(systemName: "waveform")
                                                         .font(.system(size: 10, weight: .semibold))
-                                                        .foregroundColor(syncEngine.activeLine?.id == line.id ? .white : .white.opacity(0.6))
+                                                        .foregroundColor(syncEngine.activeLine?.id == line.id ? .accentColor : .secondary)
                                                 } else if isLineActive(lyrics: lyrics, line: line) {
                                                     Image(systemName: "play.fill")
                                                         .font(.system(size: 10, weight: .semibold))
@@ -328,15 +350,19 @@ struct ManualOverrideView: View {
         }
         .padding()
         .frame(width: settings.isAppEnabled ? 400 : 250)
+        .background(colorScheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.3))
         .onAppear {
             scrollState.startMonitoring()
             
             updateOffsetText(from: syncEngine.userOffset)
             if let track = syncEngine.currentTrack {
                 let trackStr = "\(track.artist) \(track.title)"
-                searchQuery = trackStr
-                lastSeenSong = trackStr
-                if searchResults.isEmpty {
+                if trackStr != lastSeenSong {
+                    let initialQuery = syncEngine.lastAutoSearchQuery.isEmpty ? trackStr : syncEngine.lastAutoSearchQuery
+                    searchQuery = initialQuery
+                    lastSeenSong = trackStr
+                    performSearch()
+                } else if searchResults.isEmpty {
                     performSearch()
                 }
             }
@@ -350,13 +376,22 @@ struct ManualOverrideView: View {
             autoScrollTask = nil
             currentPlainLineIndex = 0
             
+            // We clear results here so it doesn't show old song's results while loading
             if let track = newTrack {
                 let trackStr = "\(track.artist) \(track.title)"
                 if trackStr != lastSeenSong {
-                    searchQuery = trackStr
-                    lastSeenSong = trackStr
-                    performSearch()
+                    searchResults = []
                 }
+            }
+        }
+        .onChange(of: syncEngine.autoSearchTrigger) { _, _ in
+            let query = syncEngine.lastAutoSearchQuery
+            if !query.isEmpty {
+                searchQuery = query
+                if let track = syncEngine.currentTrack {
+                    lastSeenSong = "\(track.artist) \(track.title)"
+                }
+                performSearch()
             }
         }
         .onChange(of: syncEngine.userOffset) { _, newValue in
@@ -409,7 +444,7 @@ struct ManualOverrideView: View {
     }
     
     private func applyOverride(_ result: LRCLIBResponse) {
-        let parsed = LRCParser.parse(plain: result.plainLyrics, synced: result.syncedLyrics, trackName: result.trackName, artistName: result.artistName)
+        let parsed = LRCParser.parse(plain: result.plainLyrics, synced: result.syncedLyrics, trackName: result.trackName, artistName: result.artistName, sourceID: result.id)
         
         // Save to cache
         if let track = syncEngine.currentTrack {
@@ -501,22 +536,42 @@ struct ManualOverrideView: View {
 
 struct SearchResultRow: View {
     let result: LRCLIBResponse
+    let isApplied: Bool
     let action: () -> Void
     @State private var isHovered = false
     
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading) {
-                Text("\(result.artistName) - \(result.trackName)")
-                    .font(.body)
-                Text("Duration: \(Int(result.duration ?? 0))s • \(result.syncedLyrics != nil ? "Synced" : "Plain")")
+            HStack {
+                VStack(alignment: .leading) {
+                    Text("\(result.artistName) - \(result.trackName)")
+                        .font(.body)
+                        .foregroundColor(isApplied ? .accentColor : .primary)
+                    HStack(spacing: 4) {
+                        Text("Duration: \(Int(result.duration ?? 0))s •")
+                        if result.syncedLyrics != nil {
+                            Text("♫")
+                                .foregroundColor(.green)
+                            Text("Synced")
+                        } else {
+                            Image(systemName: "text.alignleft")
+                                .foregroundColor(.yellow)
+                            Text("Plain")
+                        }
+                    }
                     .font(.caption)
                     .foregroundColor(.secondary)
+                }
+                Spacer()
+                if isApplied {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.accentColor)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 4)
             .padding(.horizontal, 4)
-            .background(isHovered ? Color.secondary.opacity(0.2) : Color.clear)
+            .background(isHovered ? (isApplied ? Color.accentColor.opacity(0.1) : Color.secondary.opacity(0.2)) : Color.clear)
             .cornerRadius(4)
             .contentShape(Rectangle())
         }

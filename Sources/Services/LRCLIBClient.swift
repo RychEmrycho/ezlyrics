@@ -58,10 +58,6 @@ final class LRCLIBClient: Sendable {
         }
         
         if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-            // If direct match fails, fallback to search
-            if let firstResult = try? await searchLyrics(query: "\(artist) \(title)").first {
-                return firstResult
-            }
             throw LRCLIBError.notFound
         }
         
