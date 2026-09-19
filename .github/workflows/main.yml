@@ -39,20 +39,14 @@ jobs:
     - name: Run Tests & Calculate Coverage
       run: make test-coverage
 
-    - name: Report Code Coverage
-      if: github.event_name == 'pull_request'
-      uses: romeovs/lcov-reporter-action@v0.3.1
+    - name: Upload coverage to Codecov
+      if: github.event_name == 'pull_request' || github.event_name == 'push'
+      uses: codecov/codecov-action@v4
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        lcov-file: ./lcov.info
-
-    - name: Code Coverage Annotations
-      if: github.event_name == 'pull_request'
-      uses: ggilder/codecoverage@v1
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COVERAGE_FILE_PATH: "lcov.info"
-        COVERAGE_FORMAT: "lcov"
+        files: ./lcov.info
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true
+        verbose: true
 
   release:
     name: Release
