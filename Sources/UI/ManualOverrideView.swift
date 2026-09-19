@@ -31,7 +31,7 @@ class ScrollMonitorState: ObservableObject {
 struct ManualOverrideView: View {
     @ObservedObject var syncEngine: SyncEngine
     @ObservedObject var searchViewModel: SearchViewModel
-    @ObservedObject private var settings = SettingsManager.shared
+    @ObservedObject private var settings = UserPreferences.shared
     @State private var searchQuery = ""
     @State private var searchResults: [LRCLIBResponse] = []
     @State private var isSearching = false
@@ -65,14 +65,14 @@ struct ManualOverrideView: View {
             
             Divider()
             
-            if let suggested = searchViewModel.suggestedResponse {
+            if let recommended = searchViewModel.recommendedResponse {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Suggested Lyric")
+                    Text("Recommended")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    SearchResultRow(result: suggested, isApplied: syncEngine.currentLyrics?.sourceID == suggested.id) {
-                        applyOverride(suggested)
+                    SearchResultRow(result: recommended, isApplied: syncEngine.currentLyrics?.sourceID == recommended.id) {
+                        applyOverride(recommended)
                     }
                 }
                 .padding(.vertical, 4)
@@ -97,7 +97,7 @@ struct ManualOverrideView: View {
                     .padding()
             }
             
-            if !searchResults.isEmpty || searchViewModel.suggestedResponse != nil {
+            if !searchResults.isEmpty || searchViewModel.recommendedResponse != nil {
                 DisclosureGroup(isExpanded: $isShowingSearchResults) {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 12) {
@@ -531,7 +531,7 @@ struct ManualOverrideView: View {
     }
     
     private func openSettings() {
-        SettingsWindowManager.shared.show()
+        SettingsWindowController.shared.show()
     }
 }
 

@@ -1,11 +1,5 @@
 import Foundation
 
-struct FetchResult {
-    let lyrics: ParsedLyrics
-    let suggestedResponse: LRCLIBResponse?
-    let searchQuery: String
-}
-
 @MainActor
 class LyricsService {
     static let shared = LyricsService()
@@ -16,7 +10,7 @@ class LyricsService {
         if let cached = LyricsCache.shared.getCachedLyrics(artist: track.artist, title: track.title) {
             return FetchResult(
                 lyrics: cached,
-                suggestedResponse: cached.originalResponse,
+                recommendedResponse: cached.originalResponse,
                 searchQuery: "\(track.artist) \(track.title)"
             )
         }
@@ -28,39 +22,20 @@ class LyricsService {
             
             return FetchResult(
                 lyrics: parsed,
-                suggestedResponse: response.syncedLyrics != nil ? response : nil,
+                recommendedResponse: response.syncedLyrics != nil ? response : nil,
                 searchQuery: "\(track.artist) \(track.title)"
             )
         } catch {
             do {
                 let results = try await LRCLIBClient.shared.searchLyrics(query: track.title)
                 
-                var bestSuggested: LRCLIBResponse? = nil
-                let syncedResults = results.filter { $0.syncedLyrics != nil }
-                
-                if track.duration > 0 && !syncedResults.isEmpty {
-                    bestSuggested = syncedResults.min(by: { 
-                        let d1 = $0.duration ?? 0
-                        let d2 = $1.duration ?? 0
-                        return abs(d1 - track.duration) < abs(d2 - track.duration)
-                    })
-                    // Must be within 10 seconds to be considered a "close duration" suggestion
-                    if let bs = bestSuggested, let d = bs.duration, abs(d - track.duration) > 10.0 {
-                        bestSuggested = nil
-                    }
-                } else if !syncedResults.isEmpty {
-                    bestSuggested = syncedResults.first
-                }
-                
-                let fallbackMatch = results.first(where: { $0.syncedLyrics != nil || $0.plainLyrics != nil })
-                
-                if let bestMatch = bestSuggested ?? fallbackMatch {
+                if let bestMatch = LyricsRecommendationEngine.findBestMatch(in: results, forDuration: track.duration, expectedTitle: track.title, expectedArtist: track.artist) {
                     let parsed = LRCParser.parse(plain: bestMatch.plainLyrics, synced: bestMatch.syncedLyrics, trackName: bestMatch.trackName, artistName: bestMatch.artistName, sourceID: bestMatch.id, originalResponse: bestMatch)
                     LyricsCache.shared.cache(lyrics: parsed, artist: track.artist, title: track.title)
                     
                     return FetchResult(
                         lyrics: parsed,
-                        suggestedResponse: bestMatch.syncedLyrics != nil ? bestMatch : nil,
+                        recommendedResponse: bestMatch.syncedLyrics != nil ? bestMatch : nil,
                         searchQuery: track.title
                     )
                 } else {
@@ -77,7 +52,7 @@ class LyricsService {
     private func createEmptyResult(for track: NowPlayingTrack) -> FetchResult {
         return FetchResult(
             lyrics: ParsedLyrics(trackName: track.title, artistName: track.artist, isSynced: false, lines: [], detectedLanguage: nil),
-            suggestedResponse: nil,
+            recommendedResponse: nil,
             searchQuery: "\(track.artist) \(track.title)"
         )
     }

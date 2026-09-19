@@ -36,11 +36,11 @@ class MenuBarController: NSObject {
     func showRightClickMenu() {
         let menu = NSMenu()
         
-        let showOverlayItem = NSMenuItem(title: SettingsManager.shared.showOverlay ? "Hide Overlay" : "Show Overlay", action: #selector(toggleShowOverlay), keyEquivalent: "")
+        let showOverlayItem = NSMenuItem(title: UserPreferences.shared.showOverlay ? "Hide Overlay" : "Show Overlay", action: #selector(toggleShowOverlay), keyEquivalent: "")
         showOverlayItem.target = self
         menu.addItem(showOverlayItem)
         
-        let enableItem = NSMenuItem(title: SettingsManager.shared.isAppEnabled ? "Disable ezlyrics" : "Enable ezlyrics", action: #selector(toggleEnable), keyEquivalent: "")
+        let enableItem = NSMenuItem(title: UserPreferences.shared.isAppEnabled ? "Disable ezlyrics" : "Enable ezlyrics", action: #selector(toggleEnable), keyEquivalent: "")
         enableItem.target = self
         menu.addItem(enableItem)
         
@@ -62,15 +62,15 @@ class MenuBarController: NSObject {
     }
     
     @objc func toggleShowOverlay() {
-        SettingsManager.shared.showOverlay.toggle()
+        UserPreferences.shared.showOverlay.toggle()
     }
     
     @objc func toggleEnable() {
-        SettingsManager.shared.isAppEnabled.toggle()
+        UserPreferences.shared.isAppEnabled.toggle()
     }
     
     @objc func openSettings() {
-        SettingsWindowManager.shared.show()
+        SettingsWindowController.shared.show()
     }
     
     @objc func quitApp() {

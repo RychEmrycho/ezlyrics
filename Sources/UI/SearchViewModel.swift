@@ -5,5 +5,5 @@ import Combine
 class SearchViewModel: ObservableObject {
     @Published var lastAutoSearchQuery: String = ""
     @Published var autoSearchTrigger: UUID = UUID()
-    @Published var suggestedResponse: LRCLIBResponse?
+    @Published var recommendedResponse: LRCLIBResponse?
 }

@@ -17,21 +17,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup Window
         let lyricsView = LyricsOverlayView(syncEngine: syncEngine)
         windowController = FloatingHUDWindowController(rootView: lyricsView)
-        if SettingsManager.shared.showOverlay && nowPlayingMonitor.currentTrack?.isPlaying == true {
+        if UserPreferences.shared.showOverlay && nowPlayingMonitor.currentTrack?.isPlaying == true {
             windowController.showHUD()
         }
         
-        if SettingsManager.shared.isAppEnabled {
-            MediaRemoteWrapper.shared.startHelper()
+        if UserPreferences.shared.isAppEnabled {
+            MediaRemoteSystem.shared.startHelper()
         }
         
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 
-                if SettingsManager.shared.isAppEnabled {
-                    MediaRemoteWrapper.shared.startHelper()
-                    if SettingsManager.shared.showOverlay && self.nowPlayingMonitor.currentTrack != nil {
+                if UserPreferences.shared.isAppEnabled {
+                    MediaRemoteSystem.shared.startHelper()
+                    if UserPreferences.shared.showOverlay && self.nowPlayingMonitor.currentTrack != nil {
                         if self.nowPlayingMonitor.currentTrack?.isPlaying == true {
                             self.windowController.showHUD()
                         } else {
@@ -41,7 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                         self.windowController.hideHUD()
                     }
                 } else {
-                    MediaRemoteWrapper.shared.stopHelper()
+                    MediaRemoteSystem.shared.stopHelper()
                     self.windowController.hideHUD()
                     self.syncEngine.currentTrack = nil
                     self.syncEngine.currentLyrics = nil
@@ -60,7 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.syncEngine.currentTrack = track
                 if let track = track {
                     self.fetchLyrics(for: track)
-                    if SettingsManager.shared.showOverlay && SettingsManager.shared.isAppEnabled {
+                    if UserPreferences.shared.showOverlay && UserPreferences.shared.isAppEnabled {
                         self.hideHUDTask?.cancel()
                         if track.isPlaying {
                             self.windowController.showHUD()
@@ -82,7 +82,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self = self else { return }
                 self.hideHUDTask?.cancel()
                 if let lyrics = lyrics {
-                    if SettingsManager.shared.showOverlay && SettingsManager.shared.isAppEnabled {
+                    if UserPreferences.shared.showOverlay && UserPreferences.shared.isAppEnabled {
                         if self.nowPlayingMonitor.currentTrack?.isPlaying == true {
                             self.windowController.showHUD()
                         }
@@ -106,7 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let result = await LyricsService.shared.fetchBestLyrics(for: track)
             
             self.syncEngine.currentLyrics = result.lyrics
-            self.searchViewModel.suggestedResponse = result.suggestedResponse
+            self.searchViewModel.recommendedResponse = result.recommendedResponse
             self.searchViewModel.lastAutoSearchQuery = result.searchQuery
             self.searchViewModel.autoSearchTrigger = UUID()
         }

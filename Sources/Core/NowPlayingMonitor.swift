@@ -10,7 +10,7 @@ class NowPlayingMonitor: ObservableObject {
     }
     
     private func startListening() {
-        MediaRemoteWrapper.shared.onTrackChanged = { [weak self] track in
+        MediaRemoteSystem.shared.onTrackChanged = { [weak self] track in
             self?.handleTrackUpdate(track)
         }
     }
