@@ -12,10 +12,6 @@ class SyncEngine: ObservableObject {
     
     private var currentLineIndex: Int = -1
     
-    @Published var lastAutoSearchQuery: String = ""
-    @Published var autoSearchTrigger: UUID = UUID()
-    @Published var suggestedResponse: LRCLIBResponse?
-    
     @Published var currentLyrics: ParsedLyrics? {
         didSet {
             recalculateLines()

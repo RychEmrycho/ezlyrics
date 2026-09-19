@@ -30,6 +30,7 @@ class ScrollMonitorState: ObservableObject {
 
 struct ManualOverrideView: View {
     @ObservedObject var syncEngine: SyncEngine
+    @ObservedObject var searchViewModel: SearchViewModel
     @ObservedObject private var settings = SettingsManager.shared
     @State private var searchQuery = ""
     @State private var searchResults: [LRCLIBResponse] = []
@@ -64,7 +65,7 @@ struct ManualOverrideView: View {
             
             Divider()
             
-            if let suggested = syncEngine.suggestedResponse {
+            if let suggested = searchViewModel.suggestedResponse {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Suggested Lyric")
                         .font(.caption)
@@ -96,7 +97,7 @@ struct ManualOverrideView: View {
                     .padding()
             }
             
-            if !searchResults.isEmpty || syncEngine.suggestedResponse != nil {
+            if !searchResults.isEmpty || searchViewModel.suggestedResponse != nil {
                 DisclosureGroup(isExpanded: $isShowingSearchResults) {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 12) {
@@ -358,7 +359,7 @@ struct ManualOverrideView: View {
             if let track = syncEngine.currentTrack {
                 let trackStr = "\(track.artist) \(track.title)"
                 if trackStr != lastSeenSong {
-                    let initialQuery = syncEngine.lastAutoSearchQuery.isEmpty ? trackStr : syncEngine.lastAutoSearchQuery
+                    let initialQuery = searchViewModel.lastAutoSearchQuery.isEmpty ? trackStr : searchViewModel.lastAutoSearchQuery
                     searchQuery = initialQuery
                     lastSeenSong = trackStr
                     performSearch()
@@ -384,8 +385,8 @@ struct ManualOverrideView: View {
                 }
             }
         }
-        .onChange(of: syncEngine.autoSearchTrigger) { _, _ in
-            let query = syncEngine.lastAutoSearchQuery
+        .onChange(of: searchViewModel.autoSearchTrigger) { _, _ in
+            let query = searchViewModel.lastAutoSearchQuery
             if !query.isEmpty {
                 searchQuery = query
                 if let track = syncEngine.currentTrack {
@@ -534,107 +535,3 @@ struct ManualOverrideView: View {
     }
 }
 
-struct SearchResultRow: View {
-    let result: LRCLIBResponse
-    let isApplied: Bool
-    let action: () -> Void
-    @State private var isHovered = false
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                VStack(alignment: .leading) {
-                    Text("\(result.artistName) - \(result.trackName)")
-                        .font(.body)
-                        .foregroundColor(isApplied ? .accentColor : .primary)
-                    HStack(spacing: 4) {
-                        Text("Duration: \(Int(result.duration ?? 0))s •")
-                        if result.syncedLyrics != nil {
-                            Text("♫")
-                                .foregroundColor(.green)
-                            Text("Synced")
-                        } else {
-                            Image(systemName: "text.alignleft")
-                                .foregroundColor(.yellow)
-                            Text("Plain")
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                }
-                Spacer()
-                if isApplied {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.accentColor)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 4)
-            .background(isHovered ? (isApplied ? Color.accentColor.opacity(0.1) : Color.secondary.opacity(0.2)) : Color.clear)
-            .cornerRadius(4)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering in
-            isHovered = hovering
-        }
-    }
-}
-
-struct MenuItemRow: View {
-    let title: String
-    let iconName: String
-    let action: () -> Void
-    @State private var isHovered = false
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: iconName)
-                    .frame(width: 16, alignment: .center)
-                Text(title)
-            }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .background(isHovered ? Color.accentColor : Color.clear)
-                .foregroundColor(isHovered ? .white : .primary)
-                .cornerRadius(4)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-    }
-}
-
-struct MenuToggleRow: View {
-    let title: String
-    let iconName: String
-    @Binding var isOn: Bool
-    @State private var isHovered = false
-    
-    var body: some View {
-        HStack {
-            Image(systemName: iconName)
-                .frame(width: 16, alignment: .center)
-            Text(title)
-            Spacer()
-            Toggle("", isOn: $isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .scaleEffect(0.8)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(isHovered ? Color.accentColor : Color.clear)
-        .foregroundColor(isHovered ? .white : .primary)
-        .cornerRadius(4)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            isOn.toggle()
-        }
-        .onHover { isHovered = $0 }
-    }
-}

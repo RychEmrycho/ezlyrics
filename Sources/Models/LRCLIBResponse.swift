@@ -1,6 +1,6 @@
 import Foundation
 
-struct LRCLIBResponse: Codable {
+struct LRCLIBResponse: Codable, Equatable {
     let id: Int
     let trackName: String
     let artistName: String

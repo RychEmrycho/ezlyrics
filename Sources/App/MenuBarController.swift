@@ -6,7 +6,7 @@ class MenuBarController: NSObject {
     var statusItem: NSStatusItem!
     var popover: NSPopover!
     
-    func setup(syncEngine: SyncEngine) {
+    func setup(syncEngine: SyncEngine, searchViewModel: SearchViewModel) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem.button {
@@ -19,7 +19,7 @@ class MenuBarController: NSObject {
         popover = NSPopover()
         popover.behavior = .transient
         
-        let view = ManualOverrideView(syncEngine: syncEngine)
+        let view = ManualOverrideView(syncEngine: syncEngine, searchViewModel: searchViewModel)
         popover.contentViewController = NSHostingController(rootView: view)
     }
     
