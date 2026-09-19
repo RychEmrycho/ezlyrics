@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var settings = SettingsManager.shared
+    @ObservedObject var settings = UserPreferences.shared
     
     var body: some View {
         TabView {
@@ -229,30 +229,5 @@ extension Color {
         let g = Float(components[1])
         let b = Float(components[2])
         return String(format: "#%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
-    }
-}
-
-@MainActor
-class SettingsWindowManager {
-    static let shared = SettingsWindowManager()
-    var window: NSWindow?
-    
-    func show() {
-        if window == nil {
-            let settingsWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 450, height: 350),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                backing: .buffered,
-                defer: false
-            )
-            settingsWindow.minSize = NSSize(width: 450, height: 350)
-            settingsWindow.title = "Settings"
-            settingsWindow.contentView = NSHostingView(rootView: SettingsView())
-            settingsWindow.isReleasedWhenClosed = false
-            self.window = settingsWindow
-        }
-        window?.center()
-        window?.makeKeyAndOrderFront(nil)
-        NSApplication.shared.activate(ignoringOtherApps: true)
     }
 }

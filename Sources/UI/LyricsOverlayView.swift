@@ -4,7 +4,7 @@ import NaturalLanguage
 
 struct LyricsOverlayView: View {
     @ObservedObject var syncEngine: SyncEngine
-    @ObservedObject var settings = SettingsManager.shared
+    @ObservedObject var settings = UserPreferences.shared
     
     @State private var translatedLines: [UUID: String] = [:]
     
@@ -167,7 +167,7 @@ struct LyricsOverlayView: View {
 struct KaraokeLyricLineView: View {
     let active: LyricLine
     let effectiveTime: TimeInterval
-    @ObservedObject var settings: SettingsManager
+    @ObservedObject var settings: UserPreferences
     let fontDesign: Font.Design
     let textAlignment: TextAlignment
     let displayText: String

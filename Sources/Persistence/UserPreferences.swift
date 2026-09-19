@@ -1,8 +1,8 @@
 import Foundation
 import SwiftUI
 
-class SettingsManager: ObservableObject, @unchecked Sendable {
-    static let shared = SettingsManager()
+class UserPreferences: ObservableObject, @unchecked Sendable {
+    static let shared = UserPreferences()
     
     @AppStorage("fontSize") var fontSize: Double = 24
     @AppStorage("textColorHex") var textColorHex: String = "#FFFFFF"

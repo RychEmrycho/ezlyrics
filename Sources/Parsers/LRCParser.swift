@@ -1,7 +1,7 @@
 import Foundation
 import NaturalLanguage
 
-class LRCParser {
+struct LRCParser {
     
     static func parse(plain: String?, synced: String?, trackName: String, artistName: String, sourceID: Int? = nil, originalResponse: LRCLIBResponse? = nil) -> ParsedLyrics {
         var lines: [LyricLine] = []
