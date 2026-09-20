@@ -12,7 +12,8 @@ struct MenuBarSearchSection: View {
             if let recommended = menuBarVM.recommendedResult {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Recommended")
-                        .font(.caption)
+                        .font(.headline)
+                        .fontWeight(.semibold)
                         .foregroundColor(.secondary)
                     
                     SearchResultRow(result: recommended, isApplied: playbackVM.currentLyrics?.sourceID == recommended.id) {
@@ -24,14 +25,21 @@ struct MenuBarSearchSection: View {
                 Divider()
             }
             
-            HStack {
-                TextField("Search lyrics...", text: $menuBarVM.searchQuery)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onSubmit {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Not the right lyrics?")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+                
+                HStack {
+                    TextField("Search lyrics...", text: $menuBarVM.searchQuery)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .onSubmit {
+                            performSearch(expandResults: true)
+                        }
+                    Button("Search") {
                         performSearch(expandResults: true)
                     }
-                Button("Search") {
-                    performSearch(expandResults: true)
                 }
             }
             .padding(.top, 8)

@@ -12,18 +12,20 @@ struct SearchResultRow: View {
                 VStack(alignment: .leading) {
                     Text("\(result.artistName) - \(result.trackName)")
                         .font(.body)
+                        .fixedSize(horizontal: false, vertical: true)
                         .foregroundColor(isApplied ? .accentColor : .primary)
                     HStack(spacing: 4) {
-                        Text("Duration: \(Int(result.duration ?? 0))s •")
                         if result.syncedLyrics != nil {
                             Text("♫")
                                 .foregroundColor(.green)
-                            Text("Synced")
+                            Text("Synced •")
                         } else {
                             Image(systemName: "text.alignleft")
                                 .foregroundColor(.yellow)
-                            Text("Plain")
+                            Text("Plain •")
                         }
+                        Image(systemName: "clock")
+                        Text("\(Int(result.duration ?? 0))s")
                     }
                     .font(.caption)
                     .foregroundColor(.secondary)

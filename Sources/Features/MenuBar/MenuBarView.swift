@@ -19,6 +19,7 @@ struct MenuBarView: View {
                     playbackVM: playbackVM,
                     menuBarVM: menuBarVM
                 )
+                .layoutPriority(-1)
                 
                 Divider()
                 
@@ -28,6 +29,7 @@ struct MenuBarView: View {
                         lyrics: lyrics,
                         scrollState: scrollState
                     )
+                    .layoutPriority(-1)
                     
                     Divider()
                 }
