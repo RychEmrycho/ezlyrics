@@ -25,7 +25,7 @@ struct SearchResultRow: View {
                             Text("Plain •")
                         }
                         Image(systemName: "clock")
-                        Text("\(Int(result.duration ?? 0))s")
+                        Text(formatTime(result.duration ?? 0))
                     }
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -37,15 +37,23 @@ struct SearchResultRow: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 4)
-            .padding(.horizontal, 4)
-            .background(isHovered ? (isApplied ? Color.accentColor.opacity(0.1) : Color.secondary.opacity(0.2)) : Color.clear)
-            .cornerRadius(4)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(isHovered ? (isApplied ? Color.accentColor.opacity(0.15) : Color.primary.opacity(0.06)) : (isApplied ? Color.accentColor.opacity(0.05) : Color.clear))
+            .cornerRadius(6)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering in
             isHovered = hovering
         }
+    }
+    
+    private func formatTime(_ time: TimeInterval) -> String {
+        guard time.isFinite && !time.isNaN else { return "0:00" }
+        let totalSeconds = Int(time)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 }

@@ -49,8 +49,9 @@ To compile the app yourself, you will need **Xcode 16** (or later) or the corres
    ```
 
 ## Screenshots
+<img src="assets/overlay-and-menu-bar.png" width="480" alt="Floating Lyrics Overlay" />
 
-### Floating Lyrics Overlay
+### Floating Lyrics
 <img src="assets/overlay.png" width="480" alt="Floating Lyrics Overlay" />
 
 ### Menu Bar, Manual Search & Full Lyrics

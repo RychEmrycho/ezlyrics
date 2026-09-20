@@ -42,6 +42,54 @@ class MediaRemoteSystem: NowPlayingProvider {
         self.process = process
     }
     
+    private func sendMediaKey(_ key: Int) {
+        let script = """
+        import AppKit
+
+        func postMediaKey(key: Int, down: Bool) {
+            let flags: NSEvent.ModifierFlags = down ? NSEvent.ModifierFlags(rawValue: 0xa00) : NSEvent.ModifierFlags(rawValue: 0xb00)
+            let data1 = (key << 16) | (down ? 0xa00 : 0xb00)
+            
+            if let event = NSEvent.otherEvent(
+                with: .systemDefined,
+                location: .zero,
+                modifierFlags: flags,
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                subtype: 8,
+                data1: data1,
+                data2: -1
+            ) {
+                let cgEvent = event.cgEvent
+                cgEvent?.post(tap: .cghidEventTap)
+            }
+        }
+        postMediaKey(key: \(key), down: true)
+        postMediaKey(key: \(key), down: false)
+        """
+        
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/swift")
+        process.arguments = ["-e", script]
+        try? process.run()
+    }
+    
+    func togglePlayPause() {
+        AppLogger.mediaRemote.debug("Toggling Play/Pause")
+        sendMediaKey(16) // NX_KEYTYPE_PLAY
+    }
+    
+    func nextTrack() {
+        AppLogger.mediaRemote.debug("Skipping to next track")
+        sendMediaKey(17) // NX_KEYTYPE_NEXT
+    }
+    
+    func previousTrack() {
+        AppLogger.mediaRemote.debug("Skipping to previous track")
+        sendMediaKey(18) // NX_KEYTYPE_PREVIOUS
+    }
+    
     nonisolated private func parseLine(_ line: String) {
         let parts = line.components(separatedBy: "||")
         guard parts.count >= 5 else { return }

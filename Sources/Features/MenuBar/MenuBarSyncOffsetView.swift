@@ -6,41 +6,71 @@ struct MenuBarSyncOffsetView: View {
     
     var body: some View {
         HStack {
-            Text("Sync Offset:")
+            Text("Lyrics Sync")
                 .font(.headline)
+                .foregroundColor(.secondary)
+                .help("Adjust timing if lyrics are out of sync with the audio")
+            
             Spacer()
             
-            Button(action: { adjustOffset(by: -0.1) }) {
-                Image(systemName: "minus.square")
-                    .foregroundColor(.secondary)
-            }
-            .buttonStyle(.plain)
-            
-            TextField("Offset", text: $offsetInput)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 60)
-                .multilineTextAlignment(.trailing)
-                .onSubmit {
-                    applyOffset()
+            HStack(spacing: 0) {
+                Button(action: { adjustOffset(by: -0.1) }) {
+                    Image(systemName: "minus")
+                        .font(.system(size: 11, weight: .semibold))
+                        .frame(width: 24, height: 22)
+                        .contentShape(Rectangle())
                 }
-            
-            Button(action: { adjustOffset(by: 0.1) }) {
-                Image(systemName: "plus.square")
-                    .foregroundColor(.secondary)
+                .buttonStyle(.plain)
+                
+                Divider()
+                    .frame(height: 12)
+                
+                HStack(spacing: 2) {
+                    TextField("0", text: $offsetInput)
+                        .textFieldStyle(.plain)
+                        .font(.system(.subheadline, design: .monospaced))
+                        .foregroundColor(.primary)
+                        .frame(width: 36)
+                        .multilineTextAlignment(.trailing)
+                        .onSubmit {
+                            applyOffset()
+                        }
+                    Text("ms")
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .padding(.trailing, 4)
+                }
+                .frame(width: 56)
+                
+                Divider()
+                    .frame(height: 12)
+                
+                Button(action: { adjustOffset(by: 0.1) }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 11, weight: .semibold))
+                        .frame(width: 24, height: 22)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            
-            Text("ms")
-                .foregroundColor(.secondary)
-                .font(.subheadline)
+            .background(Color(NSColor.controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+            )
             
             Button(action: { playbackVM.userOffset = 0 }) {
-                Image(systemName: "arrow.counterclockwise.circle.fill")
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(playbackVM.userOffset == 0 ? .secondary : .primary)
             }
             .buttonStyle(.plain)
+            .frame(width: 16)
             .padding(.leading, 4)
         }
         .padding(.vertical, 4)
+        .animation(.snappy, value: playbackVM.userOffset)
         .onAppear {
             updateOffsetText(from: playbackVM.userOffset)
         }
