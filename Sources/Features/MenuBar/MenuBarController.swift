@@ -83,6 +83,11 @@ class MenuBarController: NSObject {
         } else {
             if let button = statusItem.button {
                 NSApp.activate(ignoringOtherApps: true)
+                
+                if let view = popover.contentViewController?.view {
+                    popover.contentSize = view.fittingSize
+                }
+                
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
                 popover.contentViewController?.view.window?.makeKey()
             }
