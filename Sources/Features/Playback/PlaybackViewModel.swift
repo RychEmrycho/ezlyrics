@@ -19,6 +19,11 @@ class PlaybackViewModel: ObservableObject {
         self.repository = repository
     }
     
+    // Playback Controls
+    var togglePlayPause: (() -> Void)?
+    var nextTrack: (() -> Void)?
+    var previousTrack: (() -> Void)?
+    
     @Published var currentLyrics: ParsedLyrics? {
         didSet {
             recalculateLines()

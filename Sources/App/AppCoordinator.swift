@@ -43,6 +43,17 @@ final class AppCoordinator {
         playbackVM.onLyricsFetched = { [weak self] result in
             self?.menuBarVM.onLyricsFetched(result)
         }
+        
+        // Wire playback controls
+        playbackVM.togglePlayPause = { [weak self] in
+            self?.mediaRemote.togglePlayPause()
+        }
+        playbackVM.nextTrack = { [weak self] in
+            self?.mediaRemote.nextTrack()
+        }
+        playbackVM.previousTrack = { [weak self] in
+            self?.mediaRemote.previousTrack()
+        }
     }
     
     func start() {

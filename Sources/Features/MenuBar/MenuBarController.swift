@@ -20,7 +20,19 @@ class MenuBarController: NSObject {
         popover.behavior = .transient
         
         let view = MenuBarView(playbackVM: playbackVM, menuBarVM: menuBarVM)
-        popover.contentViewController = NSHostingController(rootView: view)
+        let hostingController = NSHostingController(rootView: view)
+        if #available(macOS 13.0, *) {
+            hostingController.sizingOptions = .preferredContentSize
+        }
+        popover.contentViewController = hostingController
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleUpdatePopoverSize(_:)), name: NSNotification.Name("UpdatePopoverSize"), object: nil)
+    }
+    
+    @objc func handleUpdatePopoverSize(_ notification: Notification) {
+        if popover.isShown, let view = popover.contentViewController?.view {
+            popover.contentSize = view.fittingSize
+        }
     }
     
     @objc func handleButtonAction(_ sender: NSStatusBarButton) {
@@ -84,12 +96,18 @@ class MenuBarController: NSObject {
             if let button = statusItem.button {
                 NSApp.activate(ignoringOtherApps: true)
                 
-                if let view = popover.contentViewController?.view {
-                    popover.contentSize = view.fittingSize
+                if #available(macOS 13.0, *) {
+                    // Let sizingOptions handle it
+                } else {
+                    if let view = popover.contentViewController?.view {
+                        popover.contentSize = view.fittingSize
+                    }
                 }
                 
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
                 popover.contentViewController?.view.window?.makeKey()
+                
+                NotificationCenter.default.post(name: NSNotification.Name("PopoverDidOpen"), object: nil)
             }
         }
     }

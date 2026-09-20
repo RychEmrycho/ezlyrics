@@ -7,4 +7,9 @@ protocol NowPlayingProvider: AnyObject {
     var onTrackChanged: ((Track?) -> Void)? { get set }
     func start()
     func stop()
+    
+    // Playback controls
+    func togglePlayPause()
+    func nextTrack()
+    func previousTrack()
 }

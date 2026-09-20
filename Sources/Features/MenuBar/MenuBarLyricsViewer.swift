@@ -13,11 +13,13 @@ struct MenuBarLyricsViewer: View {
     @State private var translatedLines: [UUID: String] = [:]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             ScrollViewReader { proxy in
                 HStack {
-                    Text("Full Lyrics:")
+                    Text("Full Lyrics")
                         .font(.headline)
+                        .foregroundColor(.secondary)
+                        .help("View all lyrics. Click any line to sync playback to it.")
                     Spacer()
                     
                     if lyrics.isSynced {
