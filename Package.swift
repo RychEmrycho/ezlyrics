@@ -14,7 +14,6 @@ let package = Package(
         .executableTarget(
             name: "ezlyrics",
             path: "Sources",
-            resources: [.copy("Scripts")],
             linkerSettings: [
                 .unsafeFlags(["-F/System/Library/PrivateFrameworks", "-framework", "MediaRemote"])
             ]
