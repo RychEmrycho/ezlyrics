@@ -7,7 +7,16 @@ class PlaybackViewModel: ObservableObject {
     @Published var nextLine: LyricLine?
     @Published var nextNextLine: LyricLine?
     
-    @Published var userOffset: TimeInterval = 0
+    @Published var userOffset: TimeInterval = 0 {
+        didSet {
+            recalculateLines()
+        }
+    }
+    @Published var jumpOffset: TimeInterval = 0 {
+        didSet {
+            recalculateLines()
+        }
+    }
     
     private var currentLineIndex: Int = -1
     
@@ -34,6 +43,15 @@ class PlaybackViewModel: ObservableObject {
         didSet {
             if oldValue?.title != currentTrack?.title || oldValue?.artist != currentTrack?.artist {
                 userOffset = 0
+                jumpOffset = 0
+            } else if let old = oldValue, let new = currentTrack {
+                // If it's the same song, check for drift
+                let timeSinceLastUpdate = new.lastUpdatedTime - old.lastUpdatedTime
+                let expectedElapsed = old.isPlaying ? old.elapsedTime + timeSinceLastUpdate : old.elapsedTime
+                let drift = abs(expectedElapsed - new.elapsedTime)
+                if drift > 2.0 {
+                    jumpOffset = 0
+                }
             }
             if currentTrack?.isPlaying == true {
                 startSyncing()
@@ -63,13 +81,13 @@ class PlaybackViewModel: ObservableObject {
     }
     
     func currentPlaybackTime(currentDate: Date = Date()) -> TimeInterval {
-        guard let track = currentTrack else { return userOffset }
+        guard let track = currentTrack else { return userOffset + jumpOffset }
         var currentElapsed = track.elapsedTime
         if track.isPlaying {
             let timeSinceLastUpdate = currentDate.timeIntervalSinceReferenceDate - track.lastUpdatedTime
             currentElapsed += timeSinceLastUpdate
         }
-        return currentElapsed + userOffset
+        return currentElapsed + userOffset + jumpOffset
     }
     
     /// Called by the coordinator when a new track is detected.

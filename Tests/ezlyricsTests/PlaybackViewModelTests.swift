@@ -91,19 +91,36 @@ import Foundation
         let track = Track(artist: "Artist", title: "Title", duration: 100, elapsedTime: 5, isPlaying: false, lastUpdatedTime: Date().timeIntervalSinceReferenceDate)
         sut.currentTrack = track
         sut.userOffset = 2.0
+        sut.jumpOffset = 1.5
         
         let time = sut.currentPlaybackTime()
-        #expect(time == 7.0)
+        #expect(time == 8.5)
     }
     
-    @Test func UserOffsetResetsOnNewTrack() {
+    @Test func OffsetsResetOnNewTrack() {
         let track1 = Track(artist: "Artist 1", title: "Title", duration: 100, elapsedTime: 5, isPlaying: false, lastUpdatedTime: 0)
         sut.currentTrack = track1
         sut.userOffset = 2.0
+        sut.jumpOffset = 5.0
         
         let track2 = Track(artist: "Artist 2", title: "Title", duration: 100, elapsedTime: 5, isPlaying: false, lastUpdatedTime: 0)
         sut.currentTrack = track2
         
-        #expect(sut.userOffset == 0.0) // Changed artist, should reset
+        #expect(sut.userOffset == 0.0)
+        #expect(sut.jumpOffset == 0.0)
+    }
+    
+    @Test func JumpOffsetResetsOnScrub() {
+        let track1 = Track(artist: "Artist 1", title: "Title", duration: 100, elapsedTime: 5, isPlaying: false, lastUpdatedTime: 0)
+        sut.currentTrack = track1
+        sut.userOffset = 2.0
+        sut.jumpOffset = 5.0
+        
+        // Scrub 5 seconds forward
+        let track2 = Track(artist: "Artist 1", title: "Title", duration: 100, elapsedTime: 10, isPlaying: false, lastUpdatedTime: 1)
+        sut.currentTrack = track2
+        
+        #expect(sut.userOffset == 2.0) // User offset should remain
+        #expect(sut.jumpOffset == 0.0) // Jump offset should reset
     }
 }

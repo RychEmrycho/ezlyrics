@@ -23,6 +23,20 @@ struct MenuBarLyricsViewer: View {
                     Spacer()
                     
                     if lyrics.isSynced {
+                        if playbackVM.jumpOffset != 0 {
+                            Button(action: {
+                                playbackVM.jumpOffset = 0
+                            }) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundColor(.primary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Reset manual line jump")
+                            .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .opacity))
+                            .padding(.trailing, 4)
+                        }
+                        
                         Button(action: {
                             scrollState.isAutoFollowing = true
                             if let activeId = playbackVM.activeLine?.id {
@@ -31,7 +45,8 @@ struct MenuBarLyricsViewer: View {
                                 }
                             }
                         }) {
-                            Image(systemName: scrollState.isAutoFollowing ? "location.fill" : "location")
+                            Image(systemName: "music.note")
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(scrollState.isAutoFollowing ? .accentColor : .primary)
                         }
                         .buttonStyle(.plain)
@@ -44,10 +59,12 @@ struct MenuBarLyricsViewer: View {
                             toggleAutoScroll(proxy: proxy, lines: lyrics.lines)
                         }) {
                             Image(systemName: isAutoScrollingPlain ? "pause.fill" : "play.fill")
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(isAutoScrollingPlain ? .accentColor : .primary)
                         }
                         .buttonStyle(.plain)
                         .help(isAutoScrollingPlain ? "Pause auto-scroll" : "Start auto-scroll")
+                        .padding(.trailing, 4)
                         
                         Stepper(value: $plainScrollSpeedLevel, in: 0...10, step: 1) {
                             Text(plainScrollSpeedLevel == 0 ? "Speed: Off" : "Speed: \(plainScrollSpeedLevel)")
@@ -76,6 +93,7 @@ struct MenuBarLyricsViewer: View {
                     }
                 }
                 .padding(.top, 4)
+                .animation(.snappy, value: playbackVM.jumpOffset)
                 
                 ScrollView {
                     LazyVStack(alignment: .leading) {
@@ -139,7 +157,7 @@ struct MenuBarLyricsViewer: View {
                 let timeSinceLastUpdate = Date().timeIntervalSinceReferenceDate - track.lastUpdatedTime
                 currentElapsed += timeSinceLastUpdate
             }
-            playbackVM.userOffset = line.timestamp - currentElapsed
+            playbackVM.jumpOffset = line.timestamp - currentElapsed - playbackVM.userOffset
         }
     }
     
