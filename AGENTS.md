@@ -132,11 +132,8 @@ Sources/
 ├── Infrastructure/                # Cross-cutting concerns
 │   └── AppLogger.swift            # os.Logger instances by category
 │
-├── DesignSystem/                  # Shared UI utilities
-│   └── Color+Hex.swift            # SwiftUI Color ↔ hex string conversion
-│
-└── Scripts/                       # Bundled resource scripts
-    └── MediaRemoteHelper.swift    # Subprocess that polls MediaRemote every 1s
+└── DesignSystem/                  # Shared UI utilities
+    └── Color+Hex.swift            # SwiftUI Color ↔ hex string conversion
 
 Tests/
 └── ezlyricsTests/                 # Unit tests (Swift Testing framework)
@@ -180,7 +177,7 @@ protocol NowPlayingProvider: AnyObject {
     func stop()
 }
 ```
-- **Implementation**: `MediaRemoteSystem` — launches `MediaRemoteHelper.swift` as a subprocess, parses `||`-delimited stdout lines.
+- **Implementation**: `MediaRemoteSystem` — launches a hardcoded Swift script as a subprocess, parses `||`-delimited stdout lines.
 
 #### `LyricsCacheProtocol`
 ```swift
@@ -198,7 +195,7 @@ protocol LyricsCacheProtocol: Sendable {
 ### Track Detection → Lyrics Overlay
 
 ```
-MediaRemoteHelper.swift (subprocess, polls every 1s)
+MediaRemoteSystem's Swift Subprocess (polls every 1s)
         │ stdout: "artist||title||duration||elapsed||rate"
         ▼
 MediaRemoteSystem (parses pipe-delimited output)
@@ -294,7 +291,7 @@ Use `AppLogger` (backed by `os.Logger`) with category-specific loggers:
 - `AppLogger.lyrics` — lyrics fetching/parsing
 - `AppLogger.ui` — UI events
 
-**Do not use `print()` for logging** in production code. The only exception is `MediaRemoteHelper.swift` which uses `print()` + `fflush(stdout)` to communicate via stdout pipe.
+**Do not use `print()` for logging** in production code. The only exception is the subprocess script in `MediaRemoteSystem.swift` which uses `print()` + `fflush(stdout)` to communicate via stdout pipe.
 
 ---
 
@@ -399,7 +396,7 @@ Configured via `.releaserc.json`:
 
 ### MediaRemote Private Framework
 - `MediaRemote.framework` is a **private Apple framework** located at `/System/Library/PrivateFrameworks/`.
-- The app does **not** link it directly at the Swift module level. Instead, `MediaRemoteHelper.swift` runs as a **separate subprocess** invoked via `/usr/bin/swift`, loading the framework dynamically at runtime via `CFBundleCreate` + `CFBundleGetFunctionPointerForName`.
+- The app does **not** link it directly at the Swift module level. Instead, `MediaRemoteSystem` runs a hardcoded Swift script as a **separate subprocess** invoked via `/usr/bin/swift`, loading the framework dynamically at runtime via `CFBundleCreate` + `CFBundleGetFunctionPointerForName`.
 - `Package.swift` includes linker flags (`-F/System/Library/PrivateFrameworks -framework MediaRemote`) for the main target, though the actual MediaRemote interaction happens in the subprocess.
 - **This approach means the app cannot be distributed via the Mac App Store** (private API usage). Distribution is via signed DMGs on GitHub Releases.
 
