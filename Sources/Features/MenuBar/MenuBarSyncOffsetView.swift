@@ -13,6 +13,19 @@ struct MenuBarSyncOffsetView: View {
             
             Spacer()
             
+            if playbackVM.userOffset != 0 {
+                Button(action: { 
+                    playbackVM.userOffset = 0 
+                }) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
+                }
+                .buttonStyle(.plain)
+                .transition(.asymmetric(insertion: .move(edge: .leading).combined(with: .opacity), removal: .opacity))
+                .padding(.trailing, 4)
+            }
+            
             HStack(spacing: 0) {
                 Button(action: { adjustOffset(by: -0.1) }) {
                     Image(systemName: "minus")
@@ -60,14 +73,6 @@ struct MenuBarSyncOffsetView: View {
                     .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
             )
             
-            Button(action: { playbackVM.userOffset = 0 }) {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(playbackVM.userOffset == 0 ? .secondary : .primary)
-            }
-            .buttonStyle(.plain)
-            .frame(width: 16)
-            .padding(.leading, 4)
         }
         .padding(.vertical, 4)
         .animation(.snappy, value: playbackVM.userOffset)
