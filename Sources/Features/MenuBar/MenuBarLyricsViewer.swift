@@ -52,8 +52,8 @@ struct MenuBarLyricsViewer: View {
                             }
                         }) {
                             Image(systemName: "location.fill")
-                                .font(.system(size: 13, weight: scrollState.isAutoFollowing ? .bold : .medium))
-                                .foregroundColor(.white)
+                                .font(.system(size: 11, weight: scrollState.isAutoFollowing ? .bold : .medium))
+                                .foregroundColor(scrollState.isAutoFollowing ? .white : .primary)
                                 .frame(width: 24, height: 24)
                                 .background(scrollState.isAutoFollowing ? Color.accentColor : Color.primary.opacity(0.08))
                                 .clipShape(Circle())
@@ -107,7 +107,7 @@ struct MenuBarLyricsViewer: View {
                             settings.enableTranslation.toggle()
                         }) {
                             Image(systemName: "translate")
-                                .font(.system(size: 11, weight: settings.enableTranslation ? .bold : .medium))
+                                .font(.system(size: 9, weight: settings.enableTranslation ? .bold : .medium))
                                 .foregroundColor(settings.enableTranslation ? .white : .primary)
                                 .frame(width: 24, height: 24)
                                 .background(settings.enableTranslation ? Color.accentColor : Color.primary.opacity(0.08))

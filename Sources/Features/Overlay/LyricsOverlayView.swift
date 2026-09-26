@@ -47,7 +47,7 @@ struct LyricsOverlayView: View {
     var body: some View {
         VStack(alignment: stackAlignment, spacing: 8) {
             if let active = playbackVM.activeLine {
-                TimelineView(.animation) { _ in
+                TimelineView(.animation) { context in
                     let effectiveTime = playbackVM.currentPlaybackTime()
                     
                     let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(active.text) != nil
@@ -55,41 +55,13 @@ struct LyricsOverlayView: View {
                     let subText = isRomanized ? active.text : nil
                     let translated = settings.enableTranslation && settings.translationDisplayMode != "fullLyricsOnly" ? translatedLines[active.id] : nil
                     
-                    HStack(alignment: .center, spacing: 6) {
-                        if isRomanized {
-                            Image(systemName: "waveform")
-                                .font(.system(size: max(10, settings.fontSize - 12), weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        
-                        FloatingLyricLineView(
-                            line: active,
-                            effectiveTime: effectiveTime,
-                            settings: settings,
-                            fontDesign: fontDesign,
-                            textAlignment: textAlignment,
-                            displayText: mainText
-                        )
-                    }
-                    
-                    if let subText = subText {
-                        FloatingLyricLineView(
-                            line: active,
-                            effectiveTime: effectiveTime,
-                            settings: settings,
-                            fontDesign: fontDesign,
-                            textAlignment: textAlignment,
-                            displayText: subText,
-                            fontSize: max(10, settings.fontSize - 6),
-                            fontWeight: .medium
-                        )
-                    }
-                    
-                    if let translated = translated, !translated.isEmpty {
+                    VStack(alignment: stackAlignment, spacing: 8) {
                         HStack(alignment: .center, spacing: 6) {
-                            Image(systemName: "translate")
-                                .font(.system(size: max(8, settings.fontSize - 10), weight: .semibold))
-                                .foregroundColor(Color(hex: settings.textColorHex).opacity(0.8))
+                            if isRomanized {
+                                Image(systemName: "waveform")
+                                    .font(.system(size: max(10, settings.fontSize - 12), weight: .bold))
+                                    .foregroundColor(.white)
+                            }
                             
                             FloatingLyricLineView(
                                 line: active,
@@ -97,13 +69,49 @@ struct LyricsOverlayView: View {
                                 settings: settings,
                                 fontDesign: fontDesign,
                                 textAlignment: textAlignment,
-                                displayText: translated,
-                                fontSize: max(10, settings.fontSize - 8),
-                                fontWeight: .semibold
+                                displayText: mainText
                             )
                         }
+                        
+                        if let subText = subText {
+                            FloatingLyricLineView(
+                                line: active,
+                                effectiveTime: effectiveTime,
+                                settings: settings,
+                                fontDesign: fontDesign,
+                                textAlignment: textAlignment,
+                                displayText: subText,
+                                fontSize: max(10, settings.fontSize - 6),
+                                fontWeight: .medium
+                            )
+                        }
+                        
+                        if let translated = translated, !translated.isEmpty {
+                            HStack(alignment: .center, spacing: 6) {
+                                Image(systemName: "translate")
+                                    .font(.system(size: max(8, settings.fontSize - 10), weight: .semibold))
+                                    .foregroundColor(Color(hex: settings.textColorHex).opacity(0.8))
+                                
+                                FloatingLyricLineView(
+                                    line: active,
+                                    effectiveTime: effectiveTime,
+                                    settings: settings,
+                                    fontDesign: fontDesign,
+                                    textAlignment: textAlignment,
+                                    displayText: translated,
+                                    fontSize: max(10, settings.fontSize - 8),
+                                    fontWeight: .semibold
+                                )
+                            }
+                        }
                     }
+                    .id(active.id)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: 8)),
+                        removal: .opacity.combined(with: .offset(y: -8))
+                    ))
                 }
+                .animation(.easeOut(duration: 0.15), value: active.id)
             } else {
                 Text(fallbackText)
                     .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))
@@ -181,7 +189,7 @@ struct LyricsOverlayView: View {
                 }
             }
         )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .contentShape(Rectangle()) // Make the transparent part clickable for dragging
         .applyBatchTranslation(
             items: (playbackVM.currentLyrics?.lines ?? []).filter(\.isTranslatable),

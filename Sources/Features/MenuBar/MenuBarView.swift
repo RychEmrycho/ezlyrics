@@ -35,11 +35,24 @@ struct MenuBarIconButton: View {
 }
 
 struct MenuCard<Content: View>: View {
+    var customBackground: AnyView?
     let content: () -> Content
+    
+    init(customBackground: AnyView? = nil, @ViewBuilder content: @escaping () -> Content) {
+        self.customBackground = customBackground
+        self.content = content
+    }
+    
     var body: some View {
         content()
             .padding(12)
-            .background(Color.primary.opacity(0.06))
+            .background {
+                if let customBackground {
+                    customBackground
+                } else {
+                    Color.primary.opacity(0.06)
+                }
+            }
             .cornerRadius(12)
     }
 }
@@ -56,7 +69,7 @@ struct MenuBarView: View {
         VStack(spacing: 12) {
             if settings.isAppEnabled {
                 // Card 1: Player
-                MenuCard {
+                MenuCard(customBackground: playbackVM.currentTrack != nil ? AnyView(WavyBackgroundView(track: playbackVM.currentTrack!, playbackVM: playbackVM)) : nil) {
                     MenuBarNowPlayingHeader(playbackVM: playbackVM)
                 }
                 
