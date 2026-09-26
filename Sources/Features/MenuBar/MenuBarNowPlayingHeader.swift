@@ -9,10 +9,31 @@ struct PlaybackProgressBar: View {
     
     var body: some View {
         VStack(spacing: 4) {
-            ProgressView(value: elapsed, total: max(track.duration, 1))
-                .progressViewStyle(.linear)
-                .tint(.accentColor)
-                .frame(height: 4)
+            GeometryReader { geo in
+                let total = max(track.duration, 1)
+                let percent = max(0, min(1, elapsed / total))
+                let fillWidth = geo.size.width * percent
+                
+                ZStack(alignment: .leading) {
+                    // Track line (grey)
+                    Capsule()
+                        .fill(Color.secondary.opacity(0.3))
+                        .frame(height: 4)
+                    
+                    // Running line (primary: white in dark, dark in light)
+                    Capsule()
+                        .fill(Color.primary)
+                        .frame(width: fillWidth, height: 4)
+                    
+                    // Thumb circle
+                    Circle()
+                        .fill(Color.primary)
+                        .frame(width: 8, height: 8)
+                        .offset(x: max(0, fillWidth - 4))
+                }
+                .frame(maxHeight: .infinity, alignment: .center)
+            }
+            .frame(height: 8)
             
             HStack {
                 Text(formatTime(elapsed))

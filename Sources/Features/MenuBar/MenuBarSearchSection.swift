@@ -54,6 +54,7 @@ struct MenuBarSearchSection: View {
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 8)
+                            .help("The highest scored lyrics match")
                         
                         SearchResultRow(result: recommended, isApplied: playbackVM.currentLyrics?.sourceID == recommended.id) {
                             menuBarVM.applyOverride(recommended)
@@ -76,7 +77,7 @@ struct MenuBarSearchSection: View {
                                 isShowingSearchResults.toggle()
                             }) {
                                 HStack {
-                                    Text("Alternatives (\(filteredResults.count))")
+                                    Text("Alternatives (\(filteredResults.count) lyrics)")
                                         .font(.system(size: 11, weight: .semibold))
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -91,6 +92,7 @@ struct MenuBarSearchSection: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .help(isShowingSearchResults ? "Hide alternative lyrics" : "Show alternative lyrics")
                             .onHover { isAlternativesHovered = $0 }
                             
                             if isShowingSearchResults {

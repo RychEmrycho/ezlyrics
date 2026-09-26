@@ -53,6 +53,7 @@ struct LyricsOverlayView: View {
                     let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(active.text) != nil
                     let mainText = isRomanized ? Romanizer().romanize(active.text)! : active.text
                     let subText = isRomanized ? active.text : nil
+                    let translated = settings.enableTranslation && settings.translationDisplayMode != "fullLyricsOnly" ? translatedLines[active.id] : nil
                     
                     HStack(alignment: .center, spacing: 6) {
                         if isRomanized {
@@ -72,30 +73,36 @@ struct LyricsOverlayView: View {
                     }
                     
                     if let subText = subText {
-                        Text(subText)
-                            .font(.system(size: max(10, settings.fontSize - 6), weight: .medium, design: fontDesign))
-                            .foregroundColor(Color(hex: settings.textColorHex).opacity(0.7))
-                            .multilineTextAlignment(textAlignment)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.5)
-                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                        FloatingLyricLineView(
+                            line: active,
+                            effectiveTime: effectiveTime,
+                            settings: settings,
+                            fontDesign: fontDesign,
+                            textAlignment: textAlignment,
+                            displayText: subText,
+                            fontSize: max(10, settings.fontSize - 6),
+                            fontWeight: .medium
+                        )
                     }
-                }
-                
-                if settings.enableTranslation && settings.translationDisplayMode != "fullLyricsOnly", let translated = translatedLines[active.id], !translated.isEmpty {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Image(systemName: "translate")
-                            .font(.system(size: max(8, settings.fontSize - 10), weight: .semibold))
-                            .foregroundColor(Color(hex: settings.textColorHex).opacity(0.6))
-                        
-                        Text(translated)
-                            .font(.system(size: max(10, settings.fontSize - 8), weight: .semibold, design: fontDesign))
-                            .foregroundColor(Color(hex: settings.textColorHex).opacity(0.8))
-                            .multilineTextAlignment(textAlignment)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.5)
+                    
+                    if let translated = translated, !translated.isEmpty {
+                        HStack(alignment: .center, spacing: 6) {
+                            Image(systemName: "translate")
+                                .font(.system(size: max(8, settings.fontSize - 10), weight: .semibold))
+                                .foregroundColor(Color(hex: settings.textColorHex).opacity(0.8))
+                            
+                            FloatingLyricLineView(
+                                line: active,
+                                effectiveTime: effectiveTime,
+                                settings: settings,
+                                fontDesign: fontDesign,
+                                textAlignment: textAlignment,
+                                displayText: translated,
+                                fontSize: max(10, settings.fontSize - 8),
+                                fontWeight: .semibold
+                            )
+                        }
                     }
-                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 }
             } else {
                 Text(fallbackText)
@@ -103,46 +110,63 @@ struct LyricsOverlayView: View {
                     .foregroundColor(Color(hex: settings.textColorHex).opacity(0.5))
             }
             
-            if settings.lineLayout == "two" || settings.lineLayout == "three" {
-                if let next = playbackVM.nextLine {
-                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(next.text) != nil
-                    let textToShow = isRomanized ? Romanizer().romanize(next.text)! : next.text
-                    
-                    HStack(alignment: .center, spacing: 6) {
-                        if isRomanized {
-                            Image(systemName: "waveform")
-                                .font(.system(size: max(8, settings.fontSize - 14), weight: .bold))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
+            if let active = playbackVM.activeLine {
+                let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(active.text) != nil
+                let isTranslated = settings.enableTranslation && settings.translationDisplayMode != "fullLyricsOnly" && translatedLines[active.id] != nil && !translatedLines[active.id]!.isEmpty
+                
+                let maxRows: Int = {
+                    switch settings.lineLayout {
+                    case "single": return 1
+                    case "two": return 2
+                    case "three": return 3
+                    default: return 1
+                    }
+                }()
+                
+                let activeRows = 1 + (isRomanized ? 1 : 0) + (isTranslated ? 1 : 0)
+                let availableRows = maxRows - activeRows
+                
+                if availableRows >= 1 {
+                    if let next = playbackVM.nextLine {
+                        let isRomanizedNext = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(next.text) != nil
+                        let textToShow = isRomanizedNext ? Romanizer().romanize(next.text)! : next.text
                         
-                        Text(textToShow)
-                            .font(.system(size: max(10, settings.fontSize - 6), weight: .medium, design: fontDesign))
-                            .foregroundColor(Color(hex: settings.textColorHex).opacity(0.6))
-                            .multilineTextAlignment(textAlignment)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.5)
+                        HStack(alignment: .center, spacing: 6) {
+                            if isRomanizedNext {
+                                Image(systemName: "waveform")
+                                    .font(.system(size: max(8, settings.fontSize - 14), weight: .bold))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                            
+                            Text(textToShow)
+                                .font(.system(size: max(10, settings.fontSize - 6), weight: .medium, design: fontDesign))
+                                .foregroundColor(Color(hex: settings.textColorHex).opacity(0.6))
+                                .multilineTextAlignment(textAlignment)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.5)
+                        }
                     }
                 }
-            }
-            
-            if settings.lineLayout == "three" {
-                if let nextNext = playbackVM.nextNextLine {
-                    let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(nextNext.text) != nil
-                    let textToShow = isRomanized ? Romanizer().romanize(nextNext.text)! : nextNext.text
-                    
-                    HStack(alignment: .center, spacing: 6) {
-                        if isRomanized {
-                            Image(systemName: "waveform")
-                                .font(.system(size: max(8, settings.fontSize - 14), weight: .regular))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
+                
+                if availableRows >= 2 {
+                    if let nextNext = playbackVM.nextNextLine {
+                        let isRomanizedNextNext = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(nextNext.text) != nil
+                        let textToShow = isRomanizedNextNext ? Romanizer().romanize(nextNext.text)! : nextNext.text
                         
-                        Text(textToShow)
-                            .font(.system(size: max(10, settings.fontSize - 12), weight: .regular, design: fontDesign))
-                            .foregroundColor(Color(hex: settings.textColorHex).opacity(0.4))
-                            .multilineTextAlignment(textAlignment)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.5)
+                        HStack(alignment: .center, spacing: 6) {
+                            if isRomanizedNextNext {
+                                Image(systemName: "waveform")
+                                    .font(.system(size: max(8, settings.fontSize - 14), weight: .regular))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                            
+                            Text(textToShow)
+                                .font(.system(size: max(10, settings.fontSize - 12), weight: .regular, design: fontDesign))
+                                .foregroundColor(Color(hex: settings.textColorHex).opacity(0.4))
+                                .multilineTextAlignment(textAlignment)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.5)
+                        }
                     }
                 }
             }

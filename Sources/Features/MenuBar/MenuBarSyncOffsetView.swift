@@ -66,7 +66,7 @@ struct MenuBarSyncOffsetView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .background(Color(NSColor.controlBackgroundColor))
+            .background(Color.primary.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .overlay(
                 RoundedRectangle(cornerRadius: 6)

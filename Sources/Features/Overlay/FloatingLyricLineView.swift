@@ -7,10 +7,12 @@ struct FloatingLyricLineView: View {
     let fontDesign: Font.Design
     let textAlignment: TextAlignment
     let displayText: String
+    var fontSize: CGFloat? = nil
+    var fontWeight: Font.Weight = .bold
     
     private var styledText: some View {
         Text(displayText)
-            .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))
+            .font(.system(size: fontSize ?? settings.fontSize, weight: fontWeight, design: fontDesign))
             .multilineTextAlignment(textAlignment)
             .lineLimit(2)
             .minimumScaleFactor(0.5)
