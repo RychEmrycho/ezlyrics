@@ -35,6 +35,12 @@ struct AppearanceTab: View {
                             Text("Two Lines").tag("two")
                             Text("Three Lines").tag("three")
                         }
+                        
+                        Text("Note: Enabling Romanization or Translation may override the Line Layout setting.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, -4)
                     } header: {
                         Text("Text Options")
                             .font(.headline)

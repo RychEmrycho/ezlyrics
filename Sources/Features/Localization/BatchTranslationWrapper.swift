@@ -34,7 +34,12 @@ struct BatchTranslationWrapper<Item: TranslatableItem>: ViewModifier {
                                     var newTranslations: [UUID: String] = [:]
                                     for item in items {
                                         let response = try await session.translate(item.translatableText)
-                                        newTranslations[item.id] = response.targetText
+                                        let originalNormalized = item.translatableText.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
+                                        let translatedNormalized = response.targetText.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
+                                        
+                                        if originalNormalized != translatedNormalized && !translatedNormalized.isEmpty {
+                                            newTranslations[item.id] = response.targetText
+                                        }
                                     }
                                     translatedLines = newTranslations
                                 } catch {

@@ -44,7 +44,8 @@ final class LyricsRepositoryImpl: LyricsRepository {
             )
         } catch {
             do {
-                let responses = try await client.searchLyrics(query: track.title)
+                let query = track.artist.isEmpty ? track.title : "\(track.artist) \(track.title)"
+                let responses = try await client.searchLyrics(query: query)
                 let results = responses.map { $0.toSearchResult() }
                 
                 if let bestMatch = LyricsRecommendationEngine.findBestMatch(in: results, forDuration: track.duration, expectedTitle: track.title, expectedArtist: track.artist) {
@@ -54,7 +55,7 @@ final class LyricsRepositoryImpl: LyricsRepository {
                     return FetchResult(
                         lyrics: parsed,
                         recommendedResult: bestMatch.syncedLyrics != nil ? bestMatch : nil,
-                        searchQuery: track.title
+                        searchQuery: query
                     )
                 } else {
                     AppLogger.lyrics.warning("Failed to fetch lyrics: No lyrics found in search results.")

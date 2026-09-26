@@ -4,6 +4,7 @@ import AppKit
 struct MenuBarIconButton: View {
     let iconName: String
     let title: String
+    let helpText: String
     let isOn: Bool
     let color: Color
     let action: () -> Void
@@ -23,12 +24,12 @@ struct MenuBarIconButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(isOn ? color : (isHovered ? Color.primary.opacity(0.1) : Color.primary.opacity(0.04)))
+            .background(isOn ? color : (isHovered ? Color.primary.opacity(0.12) : Color.primary.opacity(0.08)))
             .cornerRadius(8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(title)
+        .help(helpText)
         .onHover { isHovered = $0 }
     }
 }
@@ -38,7 +39,7 @@ struct MenuCard<Content: View>: View {
     var body: some View {
         content()
             .padding(12)
-            .background(Color.primary.opacity(0.04))
+            .background(Color.primary.opacity(0.06))
             .cornerRadius(12)
     }
 }
@@ -48,7 +49,7 @@ struct MenuBarView: View {
     @ObservedObject var menuBarVM: MenuBarViewModel
     @ObservedObject private var settings = UserPreferences.shared
     @StateObject private var scrollState = ScrollMonitorState()
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @FocusState private var dummyFocus: Bool
     
     var body: some View {
@@ -96,6 +97,7 @@ struct MenuBarView: View {
                 MenuBarIconButton(
                     iconName: "power", 
                     title: "Enable", 
+                    helpText: settings.isAppEnabled ? "Disable ezlyrics media tracking" : "Enable ezlyrics media tracking",
                     isOn: settings.isAppEnabled, 
                     color: .accentColor
                 ) {
@@ -108,6 +110,7 @@ struct MenuBarView: View {
                     MenuBarIconButton(
                         iconName: "text.quote", 
                         title: "Overlay", 
+                        helpText: settings.showOverlay ? "Hide the floating lyrics window" : "Show the floating lyrics window",
                         isOn: settings.showOverlay, 
                         color: .accentColor
                     ) {
@@ -117,6 +120,7 @@ struct MenuBarView: View {
                     MenuBarIconButton(
                         iconName: "gearshape", 
                         title: "Settings", 
+                        helpText: "Open preferences window",
                         isOn: false, 
                         color: .clear
                     ) {
@@ -127,6 +131,7 @@ struct MenuBarView: View {
                 MenuBarIconButton(
                     iconName: "xmark.circle", 
                     title: "Quit", 
+                    helpText: "Quit ezlyrics",
                     isOn: false, 
                     color: .clear
                 ) {
@@ -136,9 +141,7 @@ struct MenuBarView: View {
         }
         .padding(14)
         .frame(width: settings.isAppEnabled ? 420 : 300)
-        .background(
-            colorScheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.3)
-        )
+        // No custom background! We rely entirely on the native NSPopover visual effect view.
         .background(
             // HACK: SwiftUI on macOS aggressively auto-focuses the first available TextField 
             // in a popover (which would be our Search bar). We create this invisible dummy 

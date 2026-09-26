@@ -1,5 +1,7 @@
 import SwiftUI
 
+
+
 struct MenuBarLyricsViewer: View {
     @ObservedObject var playbackVM: PlaybackViewModel
     let lyrics: ParsedLyrics
@@ -22,6 +24,7 @@ struct MenuBarLyricsViewer: View {
                         .help("View all lyrics. Click any line to sync playback to it.")
                     Spacer()
                     
+
                     if lyrics.isSynced {
                         if playbackVM.jumpOffset != 0 {
                             Button(action: {
@@ -30,6 +33,9 @@ struct MenuBarLyricsViewer: View {
                                 Image(systemName: "arrow.counterclockwise")
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(.primary)
+                                    .frame(width: 24, height: 24)
+                                    .background(Color.primary.opacity(0.08))
+                                    .clipShape(Circle())
                             }
                             .buttonStyle(.plain)
                             .help("Reset manual line jump")
@@ -45,12 +51,15 @@ struct MenuBarLyricsViewer: View {
                                 }
                             }
                         }) {
-                            Image(systemName: "music.note")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(scrollState.isAutoFollowing ? .accentColor : .primary)
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 13, weight: scrollState.isAutoFollowing ? .bold : .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 24, height: 24)
+                                .background(scrollState.isAutoFollowing ? Color.accentColor : Color.primary.opacity(0.08))
+                                .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
-                        .help(scrollState.isAutoFollowing ? "Following active line" : "Follow active line")
+                        .help(scrollState.isAutoFollowing ? "Synced to playback" : "Jump to current lyric")
                         .padding(.trailing, 4)
                     }
                     
@@ -59,12 +68,16 @@ struct MenuBarLyricsViewer: View {
                             toggleAutoScroll(proxy: proxy, lines: lyrics.lines)
                         }) {
                             Image(systemName: isAutoScrollingPlain ? "pause.fill" : "play.fill")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(isAutoScrollingPlain ? .accentColor : .primary)
+                                .font(.system(size: 13, weight: isAutoScrollingPlain ? .bold : .medium))
+                                .foregroundColor(isAutoScrollingPlain ? .white : .primary)
+                                .frame(width: 24, height: 24)
+                                .background(isAutoScrollingPlain ? Color.accentColor : Color.primary.opacity(0.08))
+                                .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
+                        .padding(4)
+                        .contentShape(Rectangle())
                         .help(isAutoScrollingPlain ? "Pause auto-scroll" : "Start auto-scroll")
-                        .padding(.trailing, 4)
                         
                         Stepper(value: $plainScrollSpeedLevel, in: 0...10, step: 1) {
                             Text(plainScrollSpeedLevel == 0 ? "Speed: Off" : "Speed: \(plainScrollSpeedLevel)")
@@ -72,6 +85,38 @@ struct MenuBarLyricsViewer: View {
                         }
                         .frame(width: 80)
                         .padding(.trailing, 4)
+                    }
+                    
+                    Button(action: {
+                        settings.enableRomanization.toggle()
+                    }) {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 11, weight: settings.enableRomanization ? .bold : .medium))
+                            .foregroundColor(settings.enableRomanization ? .white : .primary)
+                            .frame(width: 24, height: 24)
+                            .background(settings.enableRomanization ? Color.accentColor : Color.primary.opacity(0.08))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(4)
+                    .contentShape(Rectangle())
+                    .help(settings.enableRomanization ? "Disable Romanization" : "Enable Romanization")
+                    
+                    if #available(macOS 15.0, *) {
+                        Button(action: {
+                            settings.enableTranslation.toggle()
+                        }) {
+                            Image(systemName: "translate")
+                                .font(.system(size: 11, weight: settings.enableTranslation ? .bold : .medium))
+                                .foregroundColor(settings.enableTranslation ? .white : .primary)
+                                .frame(width: 24, height: 24)
+                                .background(settings.enableTranslation ? Color.accentColor : Color.primary.opacity(0.08))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(4)
+                        .contentShape(Rectangle())
+                        .help(settings.enableTranslation ? "Disable Translation" : "Enable Translation")
                     }
                     
                     if settings.enableTranslation {
@@ -223,52 +268,51 @@ private struct MenuBarLyricLineRow: View {
         VStack(alignment: .leading, spacing: 1) {
             if settings.enableRomanization && settings.romanizationDisplayMode != "overlayOnly", let romanized = Romanizer().romanize(line.text) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    if lyrics.isSynced {
-                        Image(systemName: "waveform")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(playbackVM.activeLine?.id == line.id ? .accentColor : .secondary)
-                    } else if isLineActive {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 10, weight: isLineActive ? .bold : .semibold))
+                        .foregroundColor(isLineActive ? .primary : Color.secondary.opacity(0.5))
+                    
+                    if !lyrics.isSynced && isLineActive {
                         Image(systemName: "play.fill")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.accentColor)
+                            .foregroundColor(.primary)
                     }
                     
                     if settings.showTimestampsInMenu && lyrics.isSynced {
                         Text(formatTimestamp(line.timestamp))
-                            .font(.system(size: 10, weight: .regular, design: .monospaced))
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 10, weight: isLineActive ? .semibold : .regular, design: .monospaced))
+                            .foregroundColor(isLineActive ? .primary : .secondary)
                     }
                     
                     Text(romanized.isEmpty ? "♫" : romanized)
-                        .font(.body)
+                        .font(isLineActive ? .body.weight(.bold) : .body)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-                        .foregroundColor(isLineActive ? .accentColor : .primary)
+                        .foregroundColor(isLineActive ? .primary : .secondary.opacity(0.7))
                 }
                 
                 Text(line.text)
-                    .font(.caption)
+                    .font(isLineActive ? .caption.weight(.bold) : .caption)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(isLineActive ? .primary.opacity(0.9) : .secondary.opacity(0.7))
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    if lyrics.isSynced {
-                    } else if isLineActive {
+                    if !lyrics.isSynced && isLineActive {
                         Image(systemName: "play.fill")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.accentColor)
+                            .foregroundColor(.primary)
                     }
                     if settings.showTimestampsInMenu && lyrics.isSynced {
                         Text(formatTimestamp(line.timestamp))
-                            .font(.system(size: 10, weight: .regular, design: .monospaced))
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 10, weight: isLineActive ? .semibold : .regular, design: .monospaced))
+                            .foregroundColor(isLineActive ? .primary : .secondary)
                     }
                     Text(line.text.isEmpty ? "♫" : line.text)
-                        .font(.body)
+                        .font(isLineActive ? .body.weight(.bold) : .body)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
-                        .foregroundColor(isLineActive ? .accentColor : .primary)
+                        .foregroundColor(isLineActive ? .primary : .secondary.opacity(0.7))
                 }
             }
             
@@ -278,11 +322,11 @@ private struct MenuBarLyricLineRow: View {
                         .font(.system(size: 9))
                         .padding(.top, 1)
                     Text(translated)
-                        .font(.caption)
+                        .font(isLineActive ? .caption.weight(.bold) : .caption)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .foregroundColor(.secondary)
+                .foregroundColor(isLineActive ? .primary.opacity(0.9) : .secondary.opacity(0.7))
             }
         }
         .padding(.vertical, 2)
