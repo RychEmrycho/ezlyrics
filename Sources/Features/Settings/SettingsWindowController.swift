@@ -9,12 +9,12 @@ class SettingsWindowController {
     func show() {
         if window == nil {
             let settingsWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 450, height: 400),
+                contentRect: NSRect(x: 0, y: 0, width: 550, height: 400),
                 styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false
             )
-            settingsWindow.minSize = NSSize(width: 450, height: 400)
+            settingsWindow.minSize = NSSize(width: 550, height: 400)
             settingsWindow.title = "Settings"
             settingsWindow.titlebarAppearsTransparent = true
             settingsWindow.isOpaque = false
