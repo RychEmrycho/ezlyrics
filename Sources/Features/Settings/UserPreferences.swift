@@ -22,4 +22,10 @@ class UserPreferences: ObservableObject {
     @AppStorage("alignment") var alignment: String = "center"
     @AppStorage("lineLayout") var lineLayout: String = "two"
     @AppStorage("showTimestampsInMenu") var showTimestampsInMenu: Bool = false
+    @AppStorage("funModeBouncingSinger") var funModeBouncingSinger: Bool = false
+    @AppStorage("funModeDiscoGradient") var funModeDiscoGradient: Bool = false
+    @AppStorage("funModeFloatingNotes") var funModeFloatingNotes: Bool = false
+    @AppStorage("funModeConfetti") var funModeConfetti: Bool = false
+    @AppStorage("funModeWobblySinger") var funModeWobblySinger: Bool = false
+    @AppStorage("funModeNyanCat") var funModeNyanCat: Bool = false
 }

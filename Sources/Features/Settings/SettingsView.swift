@@ -39,6 +39,11 @@ struct SettingsView: View {
                         Label("Translation", systemImage: "character.book.closed")
                     }
                 
+                ExperimentalTab(settings: settings)
+                    .tabItem {
+                        Label("Experimental", systemImage: "testtube.2")
+                    }
+                
                 AboutTab()
                     .tabItem {
                         Label("About", systemImage: "info.circle")
@@ -52,7 +57,6 @@ struct SettingsView: View {
                 .frame(height: 38)
                 .ignoresSafeArea(edges: .top)
         }
-        .frame(minWidth: 450, minHeight: 400)
+        .frame(minWidth: 550, minHeight: 400)
     }
 }
-
