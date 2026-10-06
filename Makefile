@@ -1,4 +1,4 @@
-.PHONY: setup build release run lint test install clean help
+.PHONY: setup build release run lint test install uninstall clean help
 
 # Default target
 help:
@@ -10,7 +10,8 @@ help:
 	@echo "  make lint     - Run SwiftLint to check code style"
 	@echo "  make test     - Run Swift tests"
 	@echo "  make test-coverage - Run tests with code coverage report"
-	@echo "  make install  - Build release binary and install to ~/Applications"
+	@echo "  make install  - Build release binary and install to /Applications"
+	@echo "  make uninstall - Remove ezlyrics (dev).app from /Applications"
 	@echo "  make package  - Build the release DMG for local testing"
 	@echo "  make clean    - Clean build artifacts"
 
@@ -53,6 +54,10 @@ test-coverage:
 
 install:
 	./install.sh
+
+uninstall:
+	rm -rf "/Applications/ezlyrics (dev).app"
+	@echo "✅ Uninstalled ezlyrics (dev) from /Applications"
 
 package:
 	./package.sh local_test

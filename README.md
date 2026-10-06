@@ -43,9 +43,13 @@ To compile the app yourself, you will need **Xcode 16** (or later) or the corres
    git clone https://github.com/RychEmrycho/ezlyrics.git
    cd ezlyrics
    ```
-2. Run `make install` to compile and move the app to your `~/Applications` folder:
+2. Run `make install` to compile and move the app to your `/Applications` folder:
    ```bash
    make install
+   ```
+3. To remove the development app, run:
+   ```bash
+   make uninstall
    ```
 
 ## Screenshots

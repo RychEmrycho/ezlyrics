@@ -344,7 +344,8 @@ make test-coverage       # Run tests + generate lcov.info coverage report
 | `make lint` | Run SwiftLint (auto-installs if needed) |
 | `make test` | Run unit tests |
 | `make test-coverage` | Tests + llvm-cov coverage report → `lcov.info` |
-| `make install` | Build release + install to `~/Applications` via `install.sh` |
+| `make install` | Build release + install to `/Applications` via `install.sh` |
+| `make uninstall` | Remove `ezlyrics (dev).app` from `/Applications` |
 | `make package` | Build release DMG via `package.sh` |
 | `make clean` | Remove `.build/`, `*.app`, `*.dmg` |
 | `make setup` | Install SwiftLint via Homebrew |
