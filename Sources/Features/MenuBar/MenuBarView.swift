@@ -61,12 +61,55 @@ struct MenuBarView: View {
     @ObservedObject var playbackVM: PlaybackViewModel
     @ObservedObject var menuBarVM: MenuBarViewModel
     @ObservedObject private var settings = UserPreferences.shared
+    @ObservedObject private var updateService = UpdateCheckerService.shared
     @StateObject private var scrollState = ScrollMonitorState()
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @FocusState private var dummyFocus: Bool
     
     var body: some View {
         VStack(spacing: 12) {
+            if updateService.updateAvailable {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.down.circle.fill")
+                    Text("Update Available: \(updateService.latestVersion)")
+                        .font(.system(size: 13, weight: .bold))
+                        .lineLimit(1)
+                    Spacer()
+                    
+                    Button(action: {
+                        if let url = updateService.releaseURL {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }) {
+                        Text("Download")
+                            .font(.system(size: 11, weight: .bold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.25))
+                            .cornerRadius(6)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Button(action: {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            updateService.updateAvailable = false
+                        }
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(4)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.leading, 12)
+                .padding(.trailing, 6)
+                .padding(.vertical, 8)
+                .background(Color.accentColor.opacity(0.9))
+                .foregroundColor(.white)
+                .cornerRadius(10)
+            }
+            
             if settings.isAppEnabled {
                 // Card 1: Player
                 MenuCard(customBackground: playbackVM.currentTrack != nil ? AnyView(WavyBackgroundView(track: playbackVM.currentTrack!, playbackVM: playbackVM)) : nil) {

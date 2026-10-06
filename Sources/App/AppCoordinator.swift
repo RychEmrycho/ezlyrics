@@ -68,6 +68,11 @@ final class AppCoordinator {
             mediaRemote.start()
         }
         
+        // Check for updates automatically in the background
+        if UserPreferences.shared.checkForUpdatesAutomatically {
+            UpdateCheckerService.shared.startDailyCheck()
+        }
+        
         // React to settings changes
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .sink { [weak self] _ in

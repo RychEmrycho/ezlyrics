@@ -39,7 +39,7 @@ struct SettingsView: View {
                         Label("Translation", systemImage: "character.book.closed")
                     }
                 
-                AboutTab()
+                AboutTab(settings: settings)
                     .tabItem {
                         Label("About", systemImage: "info.circle")
                     }
