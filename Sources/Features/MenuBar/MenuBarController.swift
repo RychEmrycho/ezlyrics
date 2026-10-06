@@ -2,7 +2,7 @@ import Cocoa
 import SwiftUI
 
 @MainActor
-class MenuBarController: NSObject {
+class MenuBarController: NSObject, NSPopoverDelegate {
     var statusItem: NSStatusItem!
     var popover: NSPopover!
     
@@ -18,6 +18,7 @@ class MenuBarController: NSObject {
         
         popover = NSPopover()
         popover.behavior = .transient
+        popover.delegate = self
         
         let view = MenuBarView(playbackVM: playbackVM, menuBarVM: menuBarVM)
         let hostingController = NSHostingController(rootView: view)
@@ -110,5 +111,9 @@ class MenuBarController: NSObject {
                 NotificationCenter.default.post(name: NSNotification.Name("PopoverDidOpen"), object: nil)
             }
         }
+    }
+    
+    func popoverDidClose(_ notification: Notification) {
+        NSApp.deactivate()
     }
 }
