@@ -26,33 +26,16 @@ class MediaRemoteSystem: NowPlayingProvider {
         typealias InfoFunc = @convention(c) (DispatchQueue, @escaping @convention(block) ([String: Any]) -> Void) -> Void
         let getInfo = unsafeBitCast(pointer, to: InfoFunc.self)
 
-        nonisolated(unsafe) var lastRawElapsedTime: Double = -1
-        nonisolated(unsafe) var isDynamic = false
-
-        let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
             getInfo(DispatchQueue.main) { info in
                 let artist = (info["kMRMediaRemoteNowPlayingInfoArtist"] as? String) ?? ""
                 let title = (info["kMRMediaRemoteNowPlayingInfoTitle"] as? String) ?? ""
                 let duration = (info["kMRMediaRemoteNowPlayingInfoDuration"] as? NSNumber)?.doubleValue ?? 0
                 let rawElapsedTime = (info["kMRMediaRemoteNowPlayingInfoElapsedTime"] as? NSNumber)?.doubleValue ?? 0
                 let rate = (info["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? NSNumber)?.doubleValue ?? 0
-                let timestampDate = info["kMRMediaRemoteNowPlayingInfoTimestamp"] as? Date
+                let timestamp = (info["kMRMediaRemoteNowPlayingInfoTimestamp"] as? Date)?.timeIntervalSinceReferenceDate ?? -1
                 
-                if lastRawElapsedTime != -1 {
-                    if rawElapsedTime != lastRawElapsedTime {
-                        isDynamic = true
-                    } else if rate > 0 {
-                        isDynamic = false
-                    }
-                }
-                lastRawElapsedTime = rawElapsedTime
-                
-                var trueElapsedTime = rawElapsedTime
-                if !isDynamic, let tDate = timestampDate, rate > 0 {
-                    trueElapsedTime += Date().timeIntervalSince(tDate)
-                }
-                
-                print("\\(artist)||\\(title)||\\(duration)||\\(trueElapsedTime)||\\(rate)")
+                print("\\(artist)||\\(title)||\\(duration)||\\(rawElapsedTime)||\\(rate)||\\(timestamp)")
                 fflush(stdout)
             }
         }
@@ -130,7 +113,7 @@ class MediaRemoteSystem: NowPlayingProvider {
     
     nonisolated private func parseLine(_ line: String) {
         let parts = line.components(separatedBy: "||")
-        guard parts.count >= 5 else { return }
+        guard parts.count >= 6 else { return }
         
         let rawArtist = parts[0]
         let rawTitle = parts[1]
@@ -144,18 +127,23 @@ class MediaRemoteSystem: NowPlayingProvider {
                 return
             }
             
-            // Delegate all metadata parsing to TrackMetadataParser
             let parsed = TrackMetadataParser.parse(rawArtist: rawArtist, rawTitle: rawTitle)
-            
             let duration = Double(parts[2]) ?? 0
-            let elapsedTime = Double(parts[3]) ?? 0
+            let rawElapsedTime = Double(parts[3]) ?? 0
             let rate = Double(parts[4]) ?? 0
+            let timestampInterval = Double(parts[5]) ?? -1
+            
+            var trueElapsedTime = rawElapsedTime
+            if timestampInterval != -1 && rate > 0 {
+                // Exact precision interpolation at the exact moment of processing
+                trueElapsedTime += Date().timeIntervalSinceReferenceDate - timestampInterval
+            }
             
             let track = Track(
                 artist: parsed.artist,
                 title: parsed.title,
                 duration: duration,
-                elapsedTime: elapsedTime,
+                elapsedTime: trueElapsedTime,
                 isPlaying: rate > 0,
                 lastUpdatedTime: Date().timeIntervalSinceReferenceDate
             )

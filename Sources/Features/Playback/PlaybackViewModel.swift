@@ -90,11 +90,14 @@ class PlaybackViewModel: ObservableObject {
         return currentElapsed + userOffset + jumpOffset
     }
     
-    /// Called by the coordinator when a new track is detected.
+    /// Called by the coordinator when a new track is detected or timing is corrected.
     func onTrackChanged(_ track: Track?) {
+        let isNewSong = currentTrack?.title != track?.title || currentTrack?.artist != track?.artist
         currentTrack = track
         if let track = track {
-            fetchLyrics(for: track)
+            if isNewSong {
+                fetchLyrics(for: track)
+            }
         } else {
             currentLyrics = nil
         }

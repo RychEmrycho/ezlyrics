@@ -5,7 +5,7 @@ struct PlaybackProgressBar: View {
     @ObservedObject var playbackVM: PlaybackViewModel
     @State private var elapsed: TimeInterval = 0
     
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         VStack(spacing: 4) {
@@ -53,7 +53,7 @@ struct PlaybackProgressBar: View {
     
     private func formatTime(_ time: TimeInterval) -> String {
         guard time.isFinite && !time.isNaN else { return "0:00" }
-        let totalSeconds = Int(time)
+        let totalSeconds = Int(round(time))
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)
