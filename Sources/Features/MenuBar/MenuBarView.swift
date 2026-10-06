@@ -61,23 +61,23 @@ struct MenuBarView: View {
     @ObservedObject var playbackVM: PlaybackViewModel
     @ObservedObject var menuBarVM: MenuBarViewModel
     @ObservedObject private var settings = UserPreferences.shared
-    @ObservedObject private var updateService = UpdateCheckerService.shared
+    @ObservedObject private var updateChecker = AppUpdateChecker.shared
     @StateObject private var scrollState = ScrollMonitorState()
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @FocusState private var dummyFocus: Bool
     
     var body: some View {
         VStack(spacing: 12) {
-            if updateService.updateAvailable {
+            if updateChecker.updateAvailable {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.down.circle.fill")
-                    Text("Update Available: \(updateService.latestVersion)")
+                    Text("Update Available: \(updateChecker.latestVersion)")
                         .font(.system(size: 13, weight: .bold))
                         .lineLimit(1)
                     Spacer()
                     
                     Button(action: {
-                        if let url = updateService.releaseURL {
+                        if let url = updateChecker.releaseURL {
                             NSWorkspace.shared.open(url)
                         }
                     }) {
@@ -92,7 +92,7 @@ struct MenuBarView: View {
                     
                     Button(action: {
                         withAnimation(.easeOut(duration: 0.2)) {
-                            updateService.updateAvailable = false
+                            updateChecker.updateAvailable = false
                         }
                     }) {
                         Image(systemName: "xmark")

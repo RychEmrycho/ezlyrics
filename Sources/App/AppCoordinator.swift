@@ -70,7 +70,7 @@ final class AppCoordinator {
         
         // Check for updates automatically in the background
         if UserPreferences.shared.checkForUpdatesAutomatically {
-            UpdateCheckerService.shared.startDailyCheck()
+            AppUpdateChecker.shared.startDailyCheck()
         }
         
         // React to settings changes

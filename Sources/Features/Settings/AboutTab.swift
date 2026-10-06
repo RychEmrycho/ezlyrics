@@ -48,7 +48,7 @@ struct AboutTab: View {
                 VStack(spacing: 12) {
                     Button(action: {
                         Task {
-                            await UpdateCheckerService.shared.checkForUpdates(silent: false)
+                            await AppUpdateChecker.shared.checkForUpdates(silent: false)
                         }
                     }) {
                         Text("Check for Updates...")

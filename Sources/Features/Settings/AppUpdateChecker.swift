@@ -2,31 +2,22 @@ import Foundation
 import Cocoa
 
 @MainActor
-final class UpdateCheckerService: ObservableObject {
-    static let shared = UpdateCheckerService()
+final class AppUpdateChecker: ObservableObject {
+    static let shared = AppUpdateChecker(provider: GitHubClient())
     
     @Published var isChecking = false
     @Published var updateAvailable = false
     @Published var latestVersion = ""
     @Published var releaseURL: URL?
     
+    private let provider: UpdateProvider
     private var timer: Timer?
-    private let repoURL = "https://api.github.com/repos/RychEmrycho/ezlyrics/releases/latest"
-    
     // Auto-update configuration
     private let timerInterval: TimeInterval = 12 * 60 * 60 // 12 hours
     private let minimumTimeBetweenChecks: TimeInterval = 24 * 60 * 60 // 24 hours
     
-    private init() {}
-    
-    struct GitHubRelease: Codable {
-        let tagName: String
-        let htmlUrl: String
-        
-        enum CodingKeys: String, CodingKey {
-            case tagName = "tag_name"
-            case htmlUrl = "html_url"
-        }
+    init(provider: UpdateProvider) {
+        self.provider = provider
     }
     
     func startDailyCheck() {
@@ -61,44 +52,10 @@ final class UpdateCheckerService: ObservableObject {
         isChecking = true
         defer { isChecking = false }
         
-        guard let url = URL(string: repoURL) else { return }
-        
         AppLogger.shared.info("Checking for updates (silent: \(silent))...")
         
-        var request = URLRequest(url: url)
-        request.setValue("application/vnd.github.v3+json", forHTTPHeaderField: "Accept")
-        // Short timeout for background checks
-        request.timeoutInterval = 10
-        
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                AppLogger.shared.error("Invalid response from GitHub API.")
-                if !silent {
-                    showError(message: "Invalid response from server.")
-                }
-                return
-            }
-            
-            // Handle GitHub rate limiting specifically
-            if httpResponse.statusCode == 403 {
-                AppLogger.shared.warning("GitHub API rate limit exceeded.")
-                if !silent {
-                    showError(message: "GitHub API rate limit exceeded. Please try again later.")
-                }
-                return
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                AppLogger.shared.error("Failed to connect to GitHub API. Status: \(httpResponse.statusCode)")
-                if !silent {
-                    showError(message: "Failed to connect to GitHub API. (Status: \(httpResponse.statusCode))")
-                }
-                return
-            }
-            
-            let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
+            let release = try await provider.fetchLatestRelease()
             let latestTag = release.tagName.trimmingCharacters(in: CharacterSet(charactersIn: "v"))
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
             
@@ -124,6 +81,11 @@ final class UpdateCheckerService: ObservableObject {
                 }
             }
             
+        } catch GitHubClientError.rateLimitExceeded {
+            AppLogger.shared.warning("GitHub API rate limit exceeded.")
+            if !silent {
+                showError(message: "GitHub API rate limit exceeded. Please try again later.")
+            }
         } catch {
             AppLogger.shared.error("Failed to check for updates: \(error)")
             if !silent {
