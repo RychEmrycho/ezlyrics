@@ -3,60 +3,70 @@ import SwiftUI
 struct PlaybackProgressBar: View {
     let track: Track
     @ObservedObject var playbackVM: PlaybackViewModel
-    @State private var elapsed: TimeInterval = 0
-    
-    let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    @AppStorage("showPreciseProgressTime") private var showPreciseTime: Bool = false
+    @State private var isHoveringTime: Bool = false
     
     var body: some View {
-        VStack(spacing: 4) {
-            GeometryReader { geo in
-                let total = max(track.duration, 1)
-                let percent = max(0, min(1, elapsed / total))
-                let fillWidth = geo.size.width * percent
-                
-                ZStack(alignment: .leading) {
-                    // Track line (grey)
-                    Capsule()
-                        .fill(Color.secondary.opacity(0.3))
-                        .frame(height: 4)
-                    
-                    // Running line (primary: white in dark, dark in light)
-                    Capsule()
-                        .fill(Color.primary)
-                        .frame(width: fillWidth, height: 4)
-                    
-                    // Thumb circle
-                    Circle()
-                        .fill(Color.primary)
-                        .frame(width: 8, height: 8)
-                        .offset(x: max(0, fillWidth - 4))
-                }
-                .frame(maxHeight: .infinity, alignment: .center)
-            }
-            .frame(height: 8)
+        TimelineView(.periodic(from: .now, by: showPreciseTime ? 0.03 : 0.25)) { context in
+            let elapsed = min(playbackVM.currentPlaybackTime(currentDate: context.date), track.duration)
             
-            HStack {
-                Text(formatTime(elapsed))
-                Spacer()
-                Text(formatTime(track.duration))
+            VStack(spacing: 4) {
+                GeometryReader { geo in
+                    let total = max(track.duration, 1)
+                    let percent = max(0, min(1, elapsed / total))
+                    let fillWidth = geo.size.width * percent
+                    
+                    ZStack(alignment: .leading) {
+                        // Track line (grey)
+                        Capsule()
+                            .fill(Color.secondary.opacity(0.3))
+                            .frame(height: 4)
+                        
+                        // Running line (primary: white in dark, dark in light)
+                        Capsule()
+                            .fill(Color.primary)
+                            .frame(width: fillWidth, height: 4)
+                        
+                        // Thumb circle
+                        Circle()
+                            .fill(Color.primary)
+                            .frame(width: 8, height: 8)
+                            .offset(x: max(0, fillWidth - 4))
+                    }
+                    .frame(maxHeight: .infinity, alignment: .center)
+                }
+                .frame(height: 8)
+                
+                HStack {
+                    Text(formatTime(elapsed))
+                    Spacer()
+                    Text(formatTime(track.duration))
+                }
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundColor(isHoveringTime ? .primary : .secondary)
+                .contentShape(Rectangle())
+                .onHover { isHoveringTime = $0 }
+                .onTapGesture {
+                    showPreciseTime.toggle()
+                }
+                .help(showPreciseTime ? "Click to show mm:ss" : "Click to show mm:ss.ms")
             }
-            .font(.system(size: 10, weight: .medium, design: .monospaced))
-            .foregroundColor(.secondary)
-        }
-        .onReceive(timer) { _ in
-            elapsed = min(playbackVM.currentPlaybackTime(), track.duration)
-        }
-        .onAppear {
-            elapsed = min(playbackVM.currentPlaybackTime(), track.duration)
         }
     }
     
     private func formatTime(_ time: TimeInterval) -> String {
-        guard time.isFinite && !time.isNaN else { return "0:00" }
-        let totalSeconds = Int(round(time))
+        guard time.isFinite && !time.isNaN && time >= 0 else {
+            return showPreciseTime ? "00:00.00" : "00:00"
+        }
+        let totalSeconds = Int(time)
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        if showPreciseTime {
+            let hundredths = Int((time.truncatingRemainder(dividingBy: 1) * 100).rounded())
+            return String(format: "%02d:%02d.%02d", minutes, seconds, min(99, max(0, hundredths)))
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
     }
 }
 
@@ -108,6 +118,7 @@ struct MenuBarNowPlayingHeader: View {
                                 .frame(width: 36, height: 36)
                                 .background(isHoveringPlay ? Color.primary.opacity(0.15) : Color.primary.opacity(0.08))
                                 .clipShape(Circle())
+                                .contentShape(Circle())
                         }
                         .buttonStyle(.plain)
                         .onHover { isHoveringPlay = $0 }

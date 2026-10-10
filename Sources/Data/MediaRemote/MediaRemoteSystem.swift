@@ -4,12 +4,17 @@ import Foundation
 class MediaRemoteSystem: NowPlayingProvider {
     
     private var process: Process?
+    private var stdoutPipe: Pipe?
     private var latestTrack: Track?
     var onTrackChanged: ((Track?) -> Void)?
     
+    /// Stop is called explicitly by the coordinator. deinit doesn't need to clean up
+    /// because the subprocess will be terminated when the app exits.
     func stop() {
+        stdoutPipe?.fileHandleForReading.readabilityHandler = nil
         process?.terminate()
         process = nil
+        stdoutPipe = nil
         latestTrack = nil
         onTrackChanged?(nil)
     }
@@ -26,19 +31,26 @@ class MediaRemoteSystem: NowPlayingProvider {
         typealias InfoFunc = @convention(c) (DispatchQueue, @escaping @convention(block) ([String: Any]) -> Void) -> Void
         let getInfo = unsafeBitCast(pointer, to: InfoFunc.self)
 
-        let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in
             getInfo(DispatchQueue.main) { info in
                 let artist = (info["kMRMediaRemoteNowPlayingInfoArtist"] as? String) ?? ""
                 let title = (info["kMRMediaRemoteNowPlayingInfoTitle"] as? String) ?? ""
                 let duration = (info["kMRMediaRemoteNowPlayingInfoDuration"] as? NSNumber)?.doubleValue ?? 0
                 let rawElapsedTime = (info["kMRMediaRemoteNowPlayingInfoElapsedTime"] as? NSNumber)?.doubleValue ?? 0
                 let rate = (info["kMRMediaRemoteNowPlayingInfoPlaybackRate"] as? NSNumber)?.doubleValue ?? 0
-                let timestamp = (info["kMRMediaRemoteNowPlayingInfoTimestamp"] as? Date)?.timeIntervalSinceReferenceDate ?? -1
-                
+                let curDate = (info["kMRMediaRemoteNowPlayingInfoCurrentPlaybackDate"] as? Date)?.timeIntervalSinceReferenceDate
+                let ts = (info["kMRMediaRemoteNowPlayingInfoTimestamp"] as? Date)?.timeIntervalSinceReferenceDate ?? -1
+                let timestamp: Double
+                if let curDate = curDate, ts != -1, abs(ts - curDate) < 5.0 {
+                    timestamp = curDate
+                } else {
+                    timestamp = ts
+                }
                 print("\\(artist)||\\(title)||\\(duration)||\\(rawElapsedTime)||\\(rate)||\\(timestamp)")
                 fflush(stdout)
             }
         }
+
         RunLoop.main.run()
         """
         
@@ -46,10 +58,11 @@ class MediaRemoteSystem: NowPlayingProvider {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/swift")
         process.arguments = ["-e", script]
         
-        let pipe = Pipe()
-        process.standardOutput = pipe
+        // Pipe stdout for now-playing data
+        let outPipe = Pipe()
+        process.standardOutput = outPipe
         
-        pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+        outPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             guard !data.isEmpty, let str = String(data: data, encoding: .utf8) else { return }
             
@@ -61,54 +74,33 @@ class MediaRemoteSystem: NowPlayingProvider {
         
         try? process.run()
         self.process = process
+        self.stdoutPipe = outPipe
     }
     
-    private func sendMediaKey(_ key: Int) {
-        let script = """
-        import AppKit
-
-        func postMediaKey(key: Int, down: Bool) {
-            let flags: NSEvent.ModifierFlags = down ? NSEvent.ModifierFlags(rawValue: 0xa00) : NSEvent.ModifierFlags(rawValue: 0xb00)
-            let data1 = (key << 16) | (down ? 0xa00 : 0xb00)
-            
-            if let event = NSEvent.otherEvent(
-                with: .systemDefined,
-                location: .zero,
-                modifierFlags: flags,
-                timestamp: 0,
-                windowNumber: 0,
-                context: nil,
-                subtype: 8,
-                data1: data1,
-                data2: -1
-            ) {
-                let cgEvent = event.cgEvent
-                cgEvent?.post(tap: .cghidEventTap)
-            }
-        }
-        postMediaKey(key: \(key), down: true)
-        postMediaKey(key: \(key), down: false)
-        """
-        
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/swift")
-        process.arguments = ["-e", script]
-        try? process.run()
-    }
+    // MARK: - Sending media playback commands via MediaRemote
+    
+    private lazy var sendMediaRemoteCommand: (@convention(c) (Int, AnyObject?) -> Bool)? = {
+        let path = "/System/Library/PrivateFrameworks/MediaRemote.framework" as CFString
+        let url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, path, .cfurlposixPathStyle, true)
+        guard let bundle = CFBundleCreate(kCFAllocatorDefault, url) else { return nil }
+        guard let ptr = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteSendCommand" as CFString) else { return nil }
+        typealias SendCommandFunc = @convention(c) (Int, AnyObject?) -> Bool
+        return unsafeBitCast(ptr, to: SendCommandFunc.self)
+    }()
     
     func togglePlayPause() {
         AppLogger.mediaRemote.debug("Toggling Play/Pause")
-        sendMediaKey(16) // NX_KEYTYPE_PLAY
+        _ = sendMediaRemoteCommand?(2, nil) // kMRTogglePlayPause
     }
     
     func nextTrack() {
         AppLogger.mediaRemote.debug("Skipping to next track")
-        sendMediaKey(17) // NX_KEYTYPE_NEXT
+        _ = sendMediaRemoteCommand?(4, nil) // kMRNextTrack
     }
     
     func previousTrack() {
         AppLogger.mediaRemote.debug("Skipping to previous track")
-        sendMediaKey(18) // NX_KEYTYPE_PREVIOUS
+        _ = sendMediaRemoteCommand?(5, nil) // kMRPreviousTrack
     }
     
     nonisolated private func parseLine(_ line: String) {
@@ -135,8 +127,7 @@ class MediaRemoteSystem: NowPlayingProvider {
             
             var trueElapsedTime = rawElapsedTime
             if timestampInterval != -1 && rate > 0 {
-                // Exact precision interpolation at the exact moment of processing
-                trueElapsedTime += Date().timeIntervalSinceReferenceDate - timestampInterval
+                trueElapsedTime += max(0, Date().timeIntervalSinceReferenceDate - timestampInterval)
             }
             
             let track = Track(

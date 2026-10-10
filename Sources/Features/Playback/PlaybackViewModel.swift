@@ -36,12 +36,23 @@ class PlaybackViewModel: ObservableObject {
     @Published var currentLyrics: ParsedLyrics? {
         didSet {
             recalculateLines()
+            switch currentLyrics {
+            case .some(let lyrics) where !lyrics.lines.isEmpty:
+                fetchState = .found(lyrics)
+            case .some:
+                fetchState = .notFound
+            case .none:
+                fetchState = .notFound
+            }
         }
     }
     
-    var currentTrack: Track? {
+    /// Tracks the current state of the lyrics fetch operation for UI feedback.
+    @Published var fetchState: LyricsFetchState = .notFound
+    
+    @Published var currentTrack: Track? {
         didSet {
-            if oldValue?.title != currentTrack?.title || oldValue?.artist != currentTrack?.artist {
+            if !oldValue.isSameSong(as: currentTrack) {
                 userOffset = 0
                 jumpOffset = 0
             } else if let old = oldValue, let new = currentTrack {
@@ -66,8 +77,8 @@ class PlaybackViewModel: ObservableObject {
     
     func startSyncing() {
         if syncTimer == nil {
-            syncTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
-                Task { @MainActor in
+            syncTimer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated {
                     self?.recalculateLines()
                 }
             }
@@ -92,23 +103,41 @@ class PlaybackViewModel: ObservableObject {
     
     /// Called by the coordinator when a new track is detected or timing is corrected.
     func onTrackChanged(_ track: Track?) {
-        let isNewSong = currentTrack?.title != track?.title || currentTrack?.artist != track?.artist
+        let isNewSong = !currentTrack.isSameSong(as: track)
         currentTrack = track
         if let track = track {
             if isNewSong {
+                fetchState = .loading
                 fetchLyrics(for: track)
             }
         } else {
             currentLyrics = nil
+            fetchState = .notFound
         }
     }
     
+    private var fetchTask: Task<Void, Never>?
+    
     private func fetchLyrics(for track: Track) {
-        Task { [weak self] in
+        // Cancel any in-flight fetch for a previous track
+        fetchTask?.cancel()
+        fetchTask = Task { [weak self] in
             guard let self = self else { return }
+            
+            await MainActor.run { self.fetchState = .loading }
+            
+            // Brief debounce — rapid skips only pay for one fetch
+            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            guard !Task.isCancelled else { return }
+            
             let result = await self.repository.fetchBestLyrics(for: track)
-            self.currentLyrics = result.lyrics
-            self.onLyricsFetched?(result)
+            guard !Task.isCancelled else { return }
+            
+            // Only apply if still tracking the same song
+            if self.currentTrack?.isSameSong(as: track) == true {
+                self.currentLyrics = result.lyrics
+                self.onLyricsFetched?(result)
+            }
         }
     }
     

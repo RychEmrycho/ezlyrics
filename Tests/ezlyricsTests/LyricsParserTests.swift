@@ -45,4 +45,28 @@ import Testing
         #expect(line.syllables?[1].text == "word2")
         #expect(abs((line.syllables?[1].timestamp ?? 0) - 10.50) <= 0.01)
     }
+    
+    @Test func ParseSyncedLyricsWithOffset() {
+        let synced = "[offset:500]\n[00:10.00]Line with offset"
+        let result = LyricsParser.parse(plain: nil, synced: synced, trackName: "Test", artistName: "Artist")
+        
+        #expect(result.isSynced)
+        #expect(result.lines.count == 1)
+        #expect(abs(result.lines[0].timestamp - 10.50) <= 0.01)
+        #expect(result.lines[0].text == "Line with offset")
+    }
+    
+    @Test func ParseSyncedLyricsFlexibleDecimalsAndMultipleTimestamps() {
+        let synced = "[00:05.1]Line with 1 decimal\n[00:08.123]Line with 3 decimals\n[00:12.00][00:15.00]Repeated line"
+        let result = LyricsParser.parse(plain: nil, synced: synced, trackName: "Test", artistName: "Artist")
+        
+        #expect(result.isSynced)
+        #expect(result.lines.count == 4)
+        #expect(abs(result.lines[0].timestamp - 5.10) <= 0.01)
+        #expect(abs(result.lines[1].timestamp - 8.123) <= 0.001)
+        #expect(abs(result.lines[2].timestamp - 12.00) <= 0.01)
+        #expect(abs(result.lines[3].timestamp - 15.00) <= 0.01)
+        #expect(result.lines[2].text == "Repeated line")
+        #expect(result.lines[3].text == "Repeated line")
+    }
 }

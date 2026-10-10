@@ -172,18 +172,20 @@ struct MenuBarLyricsViewer: View {
                 .frame(minHeight: 200, maxHeight: 300)
                 .onChange(of: playbackVM.activeLine?.id) { _, newId in
                     if scrollState.isAutoFollowing, let newId = newId {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.15)) {
                             proxy.scrollTo(newId, anchor: .center)
                         }
                     }
                 }
             }
         }
-        .onChange(of: playbackVM.currentTrack) { _, _ in
-            isAutoScrollingPlain = false
-            autoScrollTask?.cancel()
-            autoScrollTask = nil
-            currentPlainLineIndex = 0
+        .onChange(of: playbackVM.currentTrack) { oldTrack, newTrack in
+            if !oldTrack.isSameSong(as: newTrack) {
+                isAutoScrollingPlain = false
+                autoScrollTask?.cancel()
+                autoScrollTask = nil
+                currentPlainLineIndex = 0
+            }
         }
         .applyBatchTranslation(
             items: lyrics.lines.filter(\.isTranslatable),
@@ -336,7 +338,7 @@ private struct MenuBarLyricLineRow: View {
     private func formatTimestamp(_ time: TimeInterval) -> String {
         let mins = Int(time) / 60
         let secs = Int(time) % 60
-        let ms = Int((time.truncatingRemainder(dividingBy: 1)) * 100)
-        return String(format: "[%02d:%02d.%02d]", mins, secs, ms)
+        let hundredths = Int((time.truncatingRemainder(dividingBy: 1) * 100).rounded())
+        return String(format: "[%02d:%02d.%02d]", mins, secs, min(99, max(0, hundredths)))
     }
 }

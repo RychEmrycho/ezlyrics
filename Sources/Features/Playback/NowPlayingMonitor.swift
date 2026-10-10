@@ -22,7 +22,7 @@ class NowPlayingMonitor: ObservableObject {
         // If track changed (different song, or user scrubbed/drifted > 0.1s, or play/pause state changed)
         if let newTrack = track {
             if let current = self.currentTrack {
-                let isDifferentSong = newTrack.title != current.title || newTrack.artist != current.artist
+                let isDifferentSong = !current.isSameSong(as: newTrack)
                 let stateChanged = newTrack.isPlaying != current.isPlaying
                 
                 // We interpolate the expected time to see if the user scrubbed or the player corrected its timing
@@ -30,7 +30,7 @@ class NowPlayingMonitor: ObservableObject {
                 let expectedElapsed = current.isPlaying ? current.elapsedTime + timeSinceLastUpdate : current.elapsedTime
                 let drift = abs(expectedElapsed - newTrack.elapsedTime)
                 
-                if isDifferentSong || stateChanged || drift > 0.1 {
+                if isDifferentSong || stateChanged || drift > 0.02 {
                     self.currentTrack = newTrack
                 }
             } else {
