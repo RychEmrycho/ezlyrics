@@ -96,7 +96,7 @@ Sources/
 │   ├── Repository/
 │   │   └── LyricsRepositoryImpl.swift   # Concrete LyricsRepository (cache → API → fallback search)
 │   └── MediaRemote/
-│       └── MediaRemoteSystem.swift      # NowPlayingProvider via subprocess helper script
+│       └── MediaRemoteSystem.swift      # NowPlayingProvider via MediaRemote private framework
 │
 ├── Features/                      # UI feature modules
 │   ├── Overlay/
@@ -177,7 +177,7 @@ protocol NowPlayingProvider: AnyObject {
     func stop()
 }
 ```
-- **Implementation**: `MediaRemoteSystem` — launches a hardcoded Swift script as a subprocess, parses `||`-delimited stdout lines.
+- **Implementation**: `MediaRemoteSystem` — dynamically interacts with `MediaRemote.framework` via a lightweight `/usr/bin/swift` helper process, which possesses Apple platform binary permissions needed by `mediaremoted` to query now-playing info.
 
 #### `LyricsCacheProtocol`
 ```swift
@@ -195,10 +195,7 @@ protocol LyricsCacheProtocol: Sendable {
 ### Track Detection → Lyrics Overlay
 
 ```
-MediaRemoteSystem's Swift Subprocess (polls every 1s)
-        │ stdout: "artist||title||duration||elapsed||rate"
-        ▼
-MediaRemoteSystem (parses pipe-delimited output)
+MediaRemoteSystem (/usr/bin/swift helper process & 0.25s timer)
         │ calls onTrackChanged(Track?)
         ▼
 NowPlayingMonitor (deduplicates: filters same-song updates, detects scrub >2s)
@@ -247,7 +244,7 @@ This project uses **Swift 6 strict concurrency**. Follow these rules:
 - **Swift Actors** — `LyricsCache` is a Swift `actor` for thread-safe mutable state. Use actors for any new shared mutable state rather than locks or dispatch queues.
 - **`nonisolated`** — Methods on `@MainActor` classes that don't touch isolated state should be marked `nonisolated` (see `LyricsRepositoryImpl` methods).
 - **`@preconcurrency import`** — Used for frameworks that haven't adopted Sendable yet (e.g., `@preconcurrency import Translation`).
-- **No `DispatchQueue` for new code** — Use structured concurrency (`Task`, `async/await`) instead. The one exception is `MediaRemoteSystem.parseLine()` which uses `DispatchQueue.main.async` to bridge from a C callback context.
+- **No `DispatchQueue` for new code** — Use structured concurrency (`Task`, `async/await`) instead.
 
 ---
 
@@ -291,7 +288,7 @@ Use `AppLogger` (backed by `os.Logger`) with category-specific loggers:
 - `AppLogger.lyrics` — lyrics fetching/parsing
 - `AppLogger.ui` — UI events
 
-**Do not use `print()` for logging** in production code. The only exception is the subprocess script in `MediaRemoteSystem.swift` which uses `print()` + `fflush(stdout)` to communicate via stdout pipe.
+**Do not use `print()` for logging** in production code.
 
 ---
 
@@ -397,8 +394,9 @@ Configured via `.releaserc.json`:
 
 ### MediaRemote Private Framework
 - `MediaRemote.framework` is a **private Apple framework** located at `/System/Library/PrivateFrameworks/`.
-- The app does **not** link it directly at the Swift module level. Instead, `MediaRemoteSystem` runs a hardcoded Swift script as a **separate subprocess** invoked via `/usr/bin/swift`, loading the framework dynamically at runtime via `CFBundleCreate` + `CFBundleGetFunctionPointerForName`.
-- `Package.swift` includes linker flags (`-F/System/Library/PrivateFrameworks -framework MediaRemote`) for the main target, though the actual MediaRemote interaction happens in the subprocess.
+- Apple restricts access to `MRMediaRemoteGetNowPlayingInfo` to platform-signed Apple binaries; unentitled third-party binaries get denied by `mediaremoted` with `Operation not permitted`.
+- ezlyrics invokes `/usr/bin/swift` (an Apple platform binary with necessary entitlements) as a lightweight background helper process to poll `MRMediaRemoteGetNowPlayingInfo`. Standard output is parsed via pipe with line buffering, error logging, and automatic respawning.
+- `Package.swift` includes linker flags (`-F/System/Library/PrivateFrameworks -framework MediaRemote`) for the main target to issue playback control commands (`MRMediaRemoteSendCommand`).
 - **This approach means the app cannot be distributed via the Mac App Store** (private API usage). Distribution is via signed DMGs on GitHub Releases.
 
 ### Translation Availability
