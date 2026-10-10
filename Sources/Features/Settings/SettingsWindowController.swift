@@ -9,18 +9,18 @@ class SettingsWindowController {
     func show() {
         if window == nil {
             let settingsWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 450, height: 400),
-                styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                contentRect: NSRect(x: 0, y: 0, width: 480, height: 530),
+                styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false
             )
-            settingsWindow.minSize = NSSize(width: 450, height: 400)
+            settingsWindow.minSize = NSSize(width: 450, height: 480)
             settingsWindow.title = "Settings"
+            settingsWindow.titleVisibility = .hidden
             settingsWindow.titlebarAppearsTransparent = true
             settingsWindow.isOpaque = false
             settingsWindow.backgroundColor = .clear
-            
-            // We use a custom NSHostingView that includes an NSVisualEffectView in SwiftUI
+            settingsWindow.isMovableByWindowBackground = true
             settingsWindow.contentView = NSHostingView(rootView: SettingsView())
             settingsWindow.isReleasedWhenClosed = false
             self.window = settingsWindow

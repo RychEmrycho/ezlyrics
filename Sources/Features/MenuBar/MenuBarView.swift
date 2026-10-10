@@ -152,7 +152,7 @@ struct MenuBarView: View {
             HStack(spacing: 8) {
                 MenuBarIconButton(
                     iconName: "power", 
-                    title: "Enable", 
+                    title: settings.isAppEnabled ? "Enabled" : "Disabled", 
                     helpText: settings.isAppEnabled ? "Disable ezlyrics media tracking" : "Enable ezlyrics media tracking",
                     isOn: settings.isAppEnabled, 
                     color: .accentColor
