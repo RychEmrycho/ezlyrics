@@ -26,6 +26,12 @@ let appMenu = NSMenu()
 appMenu.addItem(NSMenuItem(title: "Quit ezlyrics", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 appMenuItem.submenu = appMenu
 
+let fileMenuItem = NSMenuItem()
+mainMenu.addItem(fileMenuItem)
+let fileMenu = NSMenu(title: "File")
+fileMenu.addItem(NSMenuItem(title: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w"))
+fileMenuItem.submenu = fileMenu
+
 let editMenuItem = NSMenuItem()
 mainMenu.addItem(editMenuItem)
 let editMenu = NSMenu(title: "Edit")

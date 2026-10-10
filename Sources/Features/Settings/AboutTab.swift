@@ -7,7 +7,7 @@ struct AboutTab: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                if let icon = NSImage(named: NSImage.applicationIconName) {
+                if let icon = NSImage(named: NSImage.applicationIconName) ?? NSApp.applicationIconImage {
                     Image(nsImage: icon)
                         .resizable()
                         .frame(width: 100, height: 100)
@@ -19,10 +19,11 @@ struct AboutTab: View {
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
                     
-                    let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
-                    let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+                    let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.2.0"
+                    let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+                    let versionText = (build != nil && !build!.isEmpty && build != "Unknown") ? "Version \(version) (\(build!))" : "Version \(version)"
                     
-                    Text("Version \(version) (\(build))")
+                    Text(versionText)
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 10)
@@ -31,13 +32,13 @@ struct AboutTab: View {
                         .clipShape(Capsule())
                 }
                 
-                Text("A lightweight menu bar lyrics application.")
+                Text("A simple, floating lyrics widget for macOS.")
                     .multilineTextAlignment(.center)
                     .font(.system(size: 14, weight: .regular))
                     .foregroundColor(.secondary)
                     .padding(.horizontal)
                 
-                Text("Made with ❤️ by [Emrycho](https://www.linkedin.com/in/rychemrycho/)")
+                Text("Made with ❤️ by [Emrycho](https://github.com/RychEmrycho) and [contributors](https://github.com/RychEmrycho/ezlyrics/graphs/contributors)")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.secondary)
                 
@@ -46,11 +47,11 @@ struct AboutTab: View {
                     .padding(.vertical, 8)
                 
                 VStack(spacing: 12) {
-                    Button(action: {
+                    Button {
                         Task {
                             await AppUpdateChecker.shared.checkForUpdates(silent: false)
                         }
-                    }) {
+                    } label: {
                         Text("Check for Updates...")
                             .frame(minWidth: 140)
                     }
@@ -83,5 +84,6 @@ struct AboutTab: View {
             .padding(.vertical, 32)
             .frame(maxWidth: .infinity)
         }
+        .scrollContentBackground(.hidden)
     }
 }
