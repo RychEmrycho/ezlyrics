@@ -9,14 +9,21 @@ struct LyricsOverlayView: View {
     @State private var translatedLines: [UUID: String] = [:]
     
     private var fallbackText: String {
-        if let lyrics = playbackVM.currentLyrics {
+        switch playbackVM.fetchState {
+        case .loading:
+            return "Loading..."
+        case .notFound:
+            return "No lyrics found"
+        case .found(let lyrics):
             if lyrics.lines.isEmpty {
                 return "No lyrics found"
             } else if !lyrics.isSynced {
-                return "Lyrics not synced"
+                return "" // will show unsynced text from activeLine
             }
+            return "•••"
+        case .error(let message):
+            return message
         }
-        return "•••"
     }
     
     private var fontDesign: Font.Design {
@@ -47,7 +54,7 @@ struct LyricsOverlayView: View {
     var body: some View {
         VStack(alignment: stackAlignment, spacing: 8) {
             if let active = playbackVM.activeLine {
-                TimelineView(.animation) { context in
+                TimelineView(.animation) { _ in
                     let effectiveTime = playbackVM.currentPlaybackTime()
                     
                     let isRomanized = settings.enableRomanization && settings.romanizationDisplayMode != "fullLyricsOnly" && Romanizer().romanize(active.text) != nil
@@ -106,12 +113,12 @@ struct LyricsOverlayView: View {
                         }
                     }
                     .id(active.id)
-                    .transition(.asymmetric(
+                    .transition(settings.enableTransitionAnimation ? .asymmetric(
                         insertion: .opacity.combined(with: .offset(y: 8)),
                         removal: .opacity.combined(with: .offset(y: -8))
-                    ))
+                    ) : .identity)
                 }
-                .animation(.easeOut(duration: 0.15), value: active.id)
+                .animation(settings.enableTransitionAnimation ? .easeOut(duration: 0.15) : nil, value: active.id)
             } else {
                 Text(fallbackText)
                     .font(.system(size: settings.fontSize, weight: .bold, design: fontDesign))

@@ -23,10 +23,12 @@ actor LyricsCache: LyricsCacheProtocol {
     }
     
     private func cacheKey(artist: String, title: String) -> String {
-        let cleanArtist = artist.lowercased().replacingOccurrences(of: " ", with: "")
-        let cleanTitle = title.lowercased().replacingOccurrences(of: " ", with: "")
-        // hash or encode for safe filenames
-        return "\(cleanArtist.hashValue)_\(cleanTitle.hashValue)"
+        let cleanArtist = artist.lowercased().trimmingCharacters(in: .whitespaces)
+        let cleanTitle = title.lowercased().trimmingCharacters(in: .whitespaces)
+        // Use a deterministic slug — avoids hashValue collisions
+        let slug = "\(cleanArtist)_\(cleanTitle)"
+            .addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? "fallback"
+        return slug
     }
     
     func getCachedLyrics(artist: String, title: String) -> ParsedLyrics? {

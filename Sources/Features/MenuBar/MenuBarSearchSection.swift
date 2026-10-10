@@ -148,11 +148,15 @@ struct MenuBarSearchSection: View {
                 }
             }
         }
-        .onChange(of: playbackVM.currentTrack) { _, newTrack in
-            isShowingSearchResults = false
-            if let track = newTrack {
-                let trackStr = "\(track.artist) \(track.title)"
-                if trackStr != lastSeenSong {
+        .onChange(of: playbackVM.currentTrack) { oldTrack, newTrack in
+            if !oldTrack.isSameSong(as: newTrack) {
+                isShowingSearchResults = false
+                if let track = newTrack {
+                    let trackStr = "\(track.artist) \(track.title)"
+                    if trackStr != lastSeenSong {
+                        menuBarVM.searchResults = []
+                    }
+                } else {
                     menuBarVM.searchResults = []
                 }
             }

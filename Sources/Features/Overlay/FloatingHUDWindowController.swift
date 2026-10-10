@@ -62,19 +62,19 @@ class FloatingHUDWindowController: NSWindowController {
     }
     
     func showHUD() {
-        if let window = window {
-            if !window.setFrameUsingName("OverlayWindow") {
-                if let screen = NSScreen.main {
-                    let frame = window.frame
-                    let screenFrame = screen.visibleFrame
-                    window.setFrameOrigin(NSPoint(x: screenFrame.midX - frame.width / 2, y: screenFrame.maxY - frame.height - 50))
-                }
+        guard let window = window, !window.isVisible else { return }
+        if !window.setFrameUsingName("OverlayWindow") {
+            if let screen = NSScreen.main {
+                let frame = window.frame
+                let screenFrame = screen.visibleFrame
+                window.setFrameOrigin(NSPoint(x: screenFrame.midX - frame.width / 2, y: screenFrame.maxY - frame.height - 50))
             }
         }
-        window?.orderFront(nil)
+        window.orderFront(nil)
     }
     
     func hideHUD() {
-        window?.orderOut(nil)
+        guard let window = window, window.isVisible else { return }
+        window.orderOut(nil)
     }
 }

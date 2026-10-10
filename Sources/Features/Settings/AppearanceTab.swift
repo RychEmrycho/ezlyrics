@@ -73,6 +73,12 @@ struct AppearanceTab: View {
                     Label("Show Timestamps in Full Lyrics", systemImage: "clock")
                 }
             }
+            
+            Section("Experimental") {
+                Toggle(isOn: $settings.enableTransitionAnimation) {
+                    Label("Line Transition Animation (exp)", systemImage: "sparkles")
+                }
+            }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)

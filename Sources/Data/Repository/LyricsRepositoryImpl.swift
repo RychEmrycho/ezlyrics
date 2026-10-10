@@ -2,7 +2,6 @@ import Foundation
 
 /// Concrete implementation of LyricsRepository backed by LRCLIB.
 /// This is the only class that knows about both LRCLIBClient and domain types.
-@MainActor
 final class LyricsRepositoryImpl: LyricsRepository {
     
     private let client: LRCLIBClient
