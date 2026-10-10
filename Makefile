@@ -56,8 +56,11 @@ install:
 	./install.sh
 
 uninstall:
+	killall "ezlyrics" 2>/dev/null || true
+	killall "ezlyrics (dev)" 2>/dev/null || true
 	rm -rf "/Applications/ezlyrics (dev).app"
-	@echo "✅ Uninstalled ezlyrics (dev) from /Applications"
+	rm -rf "$$HOME/Applications/ezlyrics (dev).app"
+	@echo "✅ Uninstalled ezlyrics (dev)"
 
 package:
 	./package.sh local_test
